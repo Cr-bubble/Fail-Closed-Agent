@@ -1265,6 +1265,17 @@ def _normalize_param(intent: str, key: str, value: Any) -> Any:
     return value
 
 
+def _bad_choice(value: Any, allowed) -> bool:
+    """True when an LLM-supplied enum param is not one of ``allowed``.
+
+    A non-string value (dict, list, ...) must read as invalid rather than
+    raise: set membership on an unhashable value would crash the validator,
+    turning a malformed reply into a dead request instead of the corrective
+    retry the error string triggers.
+    """
+    return not isinstance(value, str) or value not in allowed
+
+
 def _validate_param_values(intent: str, params: Dict[str, Any]) -> Optional[str]:
     if "type" in params:
         t = params["type"]
@@ -1273,38 +1284,38 @@ def _validate_param_values(intent: str, params: Dict[str, Any]) -> Optional[str]
 
     if intent == "list_ports" and "dir" in params:
         d = params["dir"]
-        if d not in LIST_PORT_DIRS:
+        if _bad_choice(d, LIST_PORT_DIRS):
             return f'Invalid port direction "{d}". Expected input or output.'
 
     if "basis" in params:
         b = params["basis"]
-        if b not in BASIS_VALUES:
+        if _bad_choice(b, BASIS_VALUES):
             return f'Invalid basis "{b}".'
 
     if intent == "rename" and "kind" in params:
         kind = params["kind"]
-        if kind not in RENAME_KINDS:
+        if _bad_choice(kind, RENAME_KINDS):
             return f'Invalid rename kind "{kind}". Expected gate, wire, or signal.'
 
     if intent == "insert_buffers" and "mode" in params:
         mode = params["mode"]
-        if mode not in BUFFER_MODES:
+        if _bad_choice(mode, BUFFER_MODES):
             return f'Invalid buffer mode "{mode}". Expected fanout or dedicated.'
 
     if intent == "insert_buffers" and "scope" in params:
         scope = params["scope"]
-        if scope not in ("gate", "signal"):
+        if _bad_choice(scope, ("gate", "signal")):
             return f'Invalid buffer scope "{scope}". Expected gate or signal.'
 
     if intent == "insert_buffers" and "objective" in params:
         objective = params["objective"]
-        if objective not in BUFFER_OBJECTIVES:
+        if _bad_choice(objective, BUFFER_OBJECTIVES):
             return (f'Invalid buffer objective "{objective}". '
                     'Expected gate_count.')
 
     if intent == "verify_equivalence" and "against" in params:
         against = params["against"]
-        if against not in EQUIV_TARGETS:
+        if _bad_choice(against, EQUIV_TARGETS):
             return f'Invalid equivalence target "{against}".'
 
     if intent == "delta_count":

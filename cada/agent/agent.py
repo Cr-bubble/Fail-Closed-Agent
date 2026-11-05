@@ -243,6 +243,34 @@ class Agent:
         return ("Acknowledged. The request was not mapped to a specific EDA "
                 "operation; the current design is unchanged.")
 
+    def _rename_collision(self, old: str, new: str, space: str) -> str:
+        """Refusal text when renaming ``old`` to ``new`` would merge objects.
+
+        Rename is the one mutation allowed to skip the commit gate on the
+        grounds that it cannot change function — which holds only while the
+        new name is fresh.  Renaming a net onto an existing net fuses their
+        drivers and loads (a functional edit in disguise, and the written
+        netlist ends up double-driven); renaming a gate onto an existing
+        instance name writes out duplicate instances.  Refuse both.
+        """
+        nl = self.state.current
+        if nl is None or new == old:
+            return ""
+        if space == "gate":
+            exists = lambda n: any(g.name == n for g in nl.gates) or any(
+                ff.name == n for ff in nl.dffs)
+        else:
+            nets = nl.all_nets() | {"1'b0", "1'b1"}
+            exists = nets.__contains__
+        # A missing ``old`` must keep answering "No <x> named <old> was found"
+        # (the pre-guard reply), not a collision message about a rename that
+        # could never start.
+        if not exists(old) or not exists(new):
+            return ""
+        return (f'Cannot rename {old} to "{new}": a {space} named "{new}" '
+                "already exists, so the rename would merge two distinct "
+                "objects. The design is unchanged.")
+
     # ===================================================================
     # rule table
     # ===================================================================
@@ -1616,6 +1644,9 @@ class Agent:
             return self._need_design()
         kind = m.group(2).lower()
         old, new = m.group(3), m.group(4)
+        bad = self._rename_collision(old, new, "gate" if kind == "gate" else "net")
+        if bad:
+            return bad
         if kind == "gate":
             ok = naming.rename_gate(self.state.current, old, new)
         else:
@@ -1631,6 +1662,9 @@ class Agent:
             return self._need_design()
         old, new = m.group(2), m.group(3)
         kind = "gate" if old.startswith("g") and self.state.current.gate_by_name(old) else "signal"
+        bad = self._rename_collision(old, new, "gate" if kind == "gate" else "net")
+        if bad:
+            return bad
         if kind == "gate":
             ok = naming.rename_gate(self.state.current, old, new)
         else:
@@ -2825,6 +2859,9 @@ class Agent:
         kind = str(kind or "signal").lower()
         # wires/nets rename like signals, but the reply echoes the caller's noun
         word = kind if kind in ("gate", "wire", "signal") else "signal"
+        bad = self._rename_collision(old, new, "gate" if kind == "gate" else "net")
+        if bad:
+            return bad
         if kind == "gate":
             ok = naming.rename_gate(self.state.current, old, new)
         else:
