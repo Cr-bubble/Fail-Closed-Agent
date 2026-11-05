@@ -45,6 +45,8 @@
 ## 二、實驗 TODO
 
 **規則:所有打 API 的實驗一律串行執行(單一 job),不得並行搶 quota——67.2% 事件的教訓。**
+**2026-11-05 決策:haiku 實驗全面暫停(Anthropic 額度未處理),所有 API 實驗先以 gpt-4o-mini 執行;haiku 部分(E3、E4/E5 的 haiku 行)投稿前再補。**
+段落級論文細綱見 `docs/PAPER1_DRAFT_OUTLINE_ZH.md`。
 每個實驗在 `paper_exp/<ID>/` 下留:執行腳本、原始輸出(per-sentence JSONL)、`SUMMARY.md`(含確切 model id、日期、commit)。
 
 ### P0 — 定生死,先跑
