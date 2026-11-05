@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-03",
+  "repo_commit": "bbf5de5",
+  "python": "3.12.13",
+  "sklearn": "1.9.1",
+  "eval_rows": 1420,
+  "eval_cases": 71,
+  "runtime_sec": 292.0,
+  "best": {
+    "model": "tfidf_linearsvc",
+    "protocol": "b",
+    "n_eval": 1420,
+    "n_correct": 1041,
+    "accuracy": 0.7331,
+    "n_gold_unreachable": 0,
+    "accuracy_on_reachable": 0.7331
+  }
+}

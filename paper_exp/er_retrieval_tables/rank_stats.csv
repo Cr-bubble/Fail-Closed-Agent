@@ -1,0 +1,8 @@
+metric,value
+median_rank_found_only,2.0
+p90_rank_found_only,109
+median_rank_never_as_inf,2.0
+p90_rank_never_as_inf,162
+pct_never_retrieved_at_k100,0.143662
+n_never_retrieved_at_k100,204
+n_never_in_full_ranking,60

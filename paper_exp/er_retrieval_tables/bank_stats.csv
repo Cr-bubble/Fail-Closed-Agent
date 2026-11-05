@@ -1,0 +1,9 @@
+stat,value
+bank_rows,940
+unique_text_op_pairs,531
+pairs_in_more_than_one_testcase,181
+rows_that_duplicate_an_earlier_pair,409
+bank_distinct_ops,68
+eval_distinct_truth_ops,71
+eval_ops_with_zero_bank_examples,3
+bank_ops_not_in_eval,0

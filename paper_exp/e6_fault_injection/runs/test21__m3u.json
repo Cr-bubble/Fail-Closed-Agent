@@ -1,0 +1,62 @@
+{
+ "job": "test21:m3u",
+ "case": "test21",
+ "mode": "m3u",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "load-swap rewire inside the dispatched transform",
+ "injection": {
+  "applied": true,
+  "kind": "unsafe",
+  "target": "limit_fanout",
+  "rewire": "swapped load: cg10.in0 n257->n242, cg14.in0 n242->n257 (sim-verified differing)",
+  "line": 4,
+  "line_text": "Insert buffers wherever needed so that no gate drives more than 4 loads. Make sure nothing changes functionally.",
+  "response": "The buffer insertion was reverted: functional equivalence violated.",
+  "design_changed": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 max-fanout<=4 (gates)",
+   "status": "FAIL",
+   "detail": "got 22"
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "1 line(s) changed"
+  }
+ ],
+ "wall_s": 0.1,
+ "outcome": {
+  "status": "CAUGHT",
+  "sub": "guard_rollback",
+  "hard_fails": [
+   "L4 max-fanout<=4 (gates)"
+  ]
+ }
+}

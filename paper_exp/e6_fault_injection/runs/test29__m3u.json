@@ -1,0 +1,73 @@
+{
+ "job": "test29:m3u",
+ "case": "test29",
+ "mode": "m3u",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "load-swap rewire inside the basis remap",
+ "injection": {
+  "applied": true,
+  "kind": "unsafe",
+  "target": "to_basis",
+  "rewire": "swapped load: cg100.in0 n2194->cw998, cg1000.in0 cw998->n2194 (sim-verified differing)",
+  "line": 4,
+  "line_text": "Reconstruct the entire netlist using only AND and NOT gates while preserving functional equivalence.",
+  "response": "The basis remap was reverted: functional equivalence violated.",
+  "design_changed": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 basis AND_NOT",
+   "status": "FAIL",
+   "detail": "types=['nand', 'nor', 'not', 'or', 'xnor', 'xor']"
+  },
+  {
+   "label": "L8 basis AND_NOT",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "OPT",
+   "label": "L8 cost[depth]",
+   "status": "INFO",
+   "detail": "56"
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "4 line(s) changed"
+  }
+ ],
+ "wall_s": 289.4,
+ "outcome": {
+  "status": "CAUGHT",
+  "sub": "guard_rollback",
+  "hard_fails": [
+   "L4 basis AND_NOT"
+  ]
+ }
+}

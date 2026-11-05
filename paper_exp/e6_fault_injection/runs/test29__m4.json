@@ -1,0 +1,74 @@
+{
+ "job": "test29:m4",
+ "case": "test29",
+ "mode": "m4",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "intent swap: remap -> remove dangling",
+ "injection": {
+  "applied": true,
+  "kind": "dispatch",
+  "intent": "remove_dangling",
+  "params": {},
+  "grounding_flag": "",
+  "line": 4,
+  "line_text": "Reconstruct the entire netlist using only AND and NOT gates while preserving functional equivalence.",
+  "response": "Removed 0 dangling gate(s) that do not affect any primary output; equivalence verified.",
+  "design_changed": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 basis AND_NOT",
+   "status": "FAIL",
+   "detail": "types=['nand', 'nor', 'not', 'or', 'xnor', 'xor']"
+  },
+  {
+   "label": "L8 basis AND_NOT",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "OPT",
+   "label": "L8 cost[depth]",
+   "status": "INFO",
+   "detail": "56"
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "4 line(s) changed"
+  }
+ ],
+ "wall_s": 288.5,
+ "outcome": {
+  "status": "DRIFT",
+  "sub": "no-op under corrupted intent, request unfulfilled",
+  "hard_fails": [
+   "L4 basis AND_NOT"
+  ]
+ }
+}

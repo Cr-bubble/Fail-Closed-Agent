@@ -1,0 +1,6 @@
+metric,ms
+mean,0.5150
+p50,0.4661
+p95,0.9851
+max,9.3295
+n_queries,1420

@@ -1,0 +1,4 @@
+op,n_eval_queries
+minimize_area,20
+reg_to_po_depth,20
+same_clock,20

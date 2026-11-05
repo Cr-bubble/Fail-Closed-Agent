@@ -1,0 +1,75 @@
+{
+ "job": "test26:m3",
+ "case": "test26",
+ "mode": "m3",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "cone target redirected to a different net",
+ "injection": {
+  "applied": true,
+  "kind": "dispatch",
+  "intent": "convert_basis",
+  "params": {
+   "basis": "NOR_NOT",
+   "scope": "n100"
+  },
+  "grounding_flag": "",
+  "line": 4,
+  "line_text": "Convert the logic cone of n10 to use only NOR and NOT gates while preserving functional equivalence.",
+  "response": "Remapped the cone to NOR+NOT gates (0 gates rewritten); functional equivalence verified.",
+  "design_changed": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 basis NOR_NOT (cone n10)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L7 basis NOR_NOT (cone n10)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "OPT",
+   "label": "L7 cost[depth]",
+   "status": "INFO",
+   "detail": "12"
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "1 line(s) changed"
+  }
+ ],
+ "wall_s": 287.1,
+ "outcome": {
+  "status": "CAUGHT",
+  "sub": "benign_noop",
+  "hard_fails": []
+ }
+}

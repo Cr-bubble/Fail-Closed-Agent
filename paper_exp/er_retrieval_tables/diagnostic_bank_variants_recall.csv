@@ -1,0 +1,6 @@
+bank_variant,recall@5,recall@10,recall@25,recall@50,recall@100,top1_acc,top5_majority_acc
+legacy_examples2130_loto_dedup,0.841549,0.888028,0.945070,0.970423,0.985211,0.705634,0.552113
+legacy_examples2130_loto_nodedup,0.833099,0.880282,0.939437,0.964085,0.981690,,
+test91_100_bank710_dedup,0.907746,0.945775,0.975352,0.987324,0.996479,,
+public940_assigned_dedup,0.602113,0.664789,0.763380,0.821127,0.856338,,
+public940_plus_examples2130_loto_dedup,0.838732,0.887324,0.940141,0.966197,0.983803,,

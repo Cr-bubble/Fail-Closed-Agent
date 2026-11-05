@@ -1,0 +1,53 @@
+{
+ "job": "test21:clean",
+ "case": "test21",
+ "mode": "clean",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "uncorrupted baseline",
+ "injection": {
+  "applied": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 max-fanout<=4 (gates)",
+   "status": "PASS",
+   "detail": "got 4"
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "wall_s": 0.1,
+ "outcome": {
+  "status": "BASELINE_PASS",
+  "sub": "",
+  "hard_fails": []
+ }
+}

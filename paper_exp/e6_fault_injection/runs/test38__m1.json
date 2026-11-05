@@ -1,0 +1,64 @@
+{
+ "job": "test38:m1",
+ "case": "test38",
+ "mode": "m1",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "k-1 on a named net",
+ "injection": {
+  "applied": true,
+  "kind": "dispatch",
+  "intent": "insert_buffers",
+  "params": {
+   "net": "n1",
+   "k": 3
+  },
+  "grounding_flag": "",
+  "line": 4,
+  "line_text": "Try to insert buffers on the reset signal n1 to reduce its fanout to at most 4 loads per driver. Ensure the design functionality does not change.",
+  "response": "Inserted 221 buffer(s) on n1 so each driver has at most 3 loads; equivalence verified.",
+  "design_changed": true
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 fanout(n1)<=4 [harness-extra]",
+   "status": "PASS",
+   "detail": "{\"post-line\": 2, \"final\": 2}"
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "4 line(s) changed"
+  }
+ ],
+ "wall_s": 1.1,
+ "outcome": {
+  "status": "CAUGHT",
+  "sub": "benign_commit",
+  "hard_fails": []
+ }
+}

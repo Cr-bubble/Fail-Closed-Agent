@@ -1,0 +1,62 @@
+{
+ "job": "test38:m3u",
+ "case": "test38",
+ "mode": "m3u",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "load-swap rewire inside the buffer transform",
+ "injection": {
+  "applied": true,
+  "kind": "unsafe",
+  "target": "limit_fanout",
+  "rewire": "swapped load: cg10.in0 cw225->n3725, g0.in0 n3725->cw225 (sim-verified differing)",
+  "line": 4,
+  "line_text": "Try to insert buffers on the reset signal n1 to reduce its fanout to at most 4 loads per driver. Ensure the design functionality does not change.",
+  "response": "The buffer insertion was reverted: functional equivalence violated.",
+  "design_changed": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 fanout(n1)<=4 [harness-extra]",
+   "status": "FAIL",
+   "detail": "{\"post-line\": 444, \"final\": 444}"
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "4 line(s) changed"
+  }
+ ],
+ "wall_s": 1.1,
+ "outcome": {
+  "status": "CAUGHT",
+  "sub": "guard_rollback",
+  "hard_fails": [
+   "L4 fanout(n1)<=4 [harness-extra]"
+  ]
+ }
+}

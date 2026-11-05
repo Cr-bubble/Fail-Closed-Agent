@@ -1,0 +1,9 @@
+model,protocol,n_eval,n_correct,accuracy,n_gold_unreachable,accuracy_on_reachable
+tfidf_logreg,a,1420,459,0.3232,60,0.3375
+tfidf_linearsvc,a,1420,635,0.4472,60,0.4669
+bm25_top1,a,1420,673,0.4739,60,0.4949
+bm25_vote5,a,1420,461,0.3246,60,0.339
+tfidf_logreg,b,1420,688,0.4845,0,0.4845
+tfidf_linearsvc,b,1420,1041,0.7331,0,0.7331
+bm25_top1,b,1420,1007,0.7092,0,0.7092
+bm25_vote5,b,1420,804,0.5662,0,0.5662

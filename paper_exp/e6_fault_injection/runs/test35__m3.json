@@ -1,0 +1,70 @@
+{
+ "job": "test35:m3",
+ "case": "test35",
+ "mode": "m3",
+ "date": "2026-11-03",
+ "commit": "bbf5de5",
+ "note": "rename target redirected to an existing net",
+ "injection": {
+  "applied": true,
+  "kind": "dispatch",
+  "intent": "rename",
+  "params": {
+   "old": "n7431",
+   "new": "cw1",
+   "kind": "signal"
+  },
+  "grounding_flag": "",
+  "line": 10,
+  "line_text": "Update the name of signal n7431 to renamed_wire throughout the netlist. Ensure the design functionality does not change.",
+  "response": "Cannot rename n7431 to \"cw1\": a net named \"cw1\" already exists, so the rename would merge two distinct objects. The design is unchanged.",
+  "design_changed": false
+ },
+ "hard": [
+  {
+   "label": "equiv-to-original",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "valid-output-netlist",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L4 no XNOR",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "L18 no XOR",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "label": "no-multi-driven-net",
+   "status": "PASS",
+   "detail": ""
+  }
+ ],
+ "other": [
+  {
+   "group": "DERIVED",
+   "label": "L3 gate-type counts",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "group": "GOLDEN",
+   "label": "responses vs baseline",
+   "status": "DRIFT",
+   "detail": "4 line(s) changed"
+  }
+ ],
+ "wall_s": 12.5,
+ "outcome": {
+  "status": "CAUGHT",
+  "sub": "benign_noop",
+  "hard_fails": []
+ }
+}

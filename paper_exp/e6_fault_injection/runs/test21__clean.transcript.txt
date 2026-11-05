@@ -1,0 +1,24 @@
+--- L1 ---
+> This is the beginning of a new testcase. The case name is test21.
+Acknowledged. Initialized testcase "test21". All subsequent responses will be recorded to test21.log. Design state is empty and ready for commands.
+--- L2 ---
+> Please load the design from the file test21.v located in the directory testcase/test21/.
+Loaded gate-level Verilog from "testcase/test21/test21.v" successfully. Detected a single top module (flat netlist) with 343 combinational gates and 55 flip-flops. Design state has been updated.
+--- L3 ---
+> Please count all the gates in this design and report the total count broken down by gate type (AND, OR, NOT, NAND, NOR, XOR, XNOR, BUF, DFF).
+Total gate count: 398
+AND: 0
+OR: 8
+NOT: 43
+NAND: 227
+NOR: 57
+XOR: 1
+XNOR: 7
+BUF: 0
+DFF: 55
+--- L4 ---
+> Insert buffers wherever needed so that no gate drives more than 4 loads. Make sure nothing changes functionally.
+Inserted 35 buffer(s) so that no driver exceeds 4 loads; max-fanout bound and equivalence verified.
+--- L5 ---
+> Please write the current design to the output file test21_out.v.
+Wrote the current netlist to "testcase/test21/test21_out.v" successfully.
