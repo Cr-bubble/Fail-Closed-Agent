@@ -55,3 +55,21 @@ The 7 DRIFT runs are exactly the predicted phenomenon: **the guards enforce the 
 4. **Per-layer attribution**: closed-world syntax gate, name-grounding, basis/bound/cec gates, rollback — which layer caught each injection (the pilot's JSONs already carry this; formalize the field).
 5. **Guard overhead**: p50/p95 wall cost of the cec gate per transform (pilot: ms-scale at 398 gates to ~15 s at 35 k gates; one 823 s pathological cec on a corrupt netlist argues for a cec timeout => reject policy).
 6. Optional LLM-in-the-loop replication on a subset to confirm dispatch-level injection is a faithful stand-in for real corrupted router output.
+
+## POST-FIX ADDENDUM (2026-11-08)
+
+Both root-cause fixes landed on paper/routing-study as commit 23e5587
+(`_rename_collision` guarding all three rename entry points; `_bad_choice`
+hardening seven enum validations against unhashable LLM params).
+
+- Escape re-runs: test25:m3, test38:m3r, test35:m3 → all now `benign_noop`
+  with zero hard fails; corrupted rename refused with an explicit collision
+  reply. **Post-fix tally: 24/24 injections, zero unsafe commits (claim exact).**
+- Serial tiebreaker note: the pilot's test064 cdcf9af=12 was a CPU-contention
+  artifact (wall-clock-budgeted optimizer); serial rerun reproduces official 10.
+- Full regression: evaluator over all 40 public cases — HARD 84/84 PASS
+  (5th attempt, 2026-11-08). The 2 DERIVED failures (test32 L5, test37 L10
+  PI/PO counts) and the OPT-case GOLDEN drifts reproduce IDENTICALLY on a
+  pristine main worktree (cdcf9af, no fixes) → pre-existing on main since the
+  opt merge; goldens need re-pinning upstream, unrelated to these fixes.
+  Upstream TODO: cherry-pick 23e5587 to main + fix test32/37 answers + repin.
