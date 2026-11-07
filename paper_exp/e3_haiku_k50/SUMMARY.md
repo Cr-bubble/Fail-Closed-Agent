@@ -30,3 +30,11 @@ The pre-dedup, quota-interrupted **97.8%** headline remains UNVALIDATED. Do not 
 - smoke.jsonl — 50 rows, all run_valid=false (8 attempted-degraded, 42 aborted)
 - run_with_validator_shim.py — wrapper (identical to E2's)
 - run1.jsonl / run1.log — intentionally absent: full run never started
+
+## 2026-11-08 FULL RUN — VALID (credits restored)
+
+- Command: `.venv/bin/python scripts/route_eval.py --cases test101-171 --provider anthropic --retriever bm25 --top-k 50 --out paper_exp/e3_haiku_k50/run1.jsonl` (smoke `--limit 20` passed first; logs: smoke2.log, run1.log)
+- Model: claude-haiku-4-5 (from script's model= line), retriever bm25/k=50, post-dedup bank, repo commit 6b5cac2 + fixes.
+- **intent 1383/1420 = 97.4% | params 94.1% | object 92.7%**; failures 37 = 10 gave-up / 27 wrong-op.
+- No degraded calls / INVALID banner → run valid. Cost ≈ $1.
+- vs historical pre-dedup 97.8%: −0.4pt (6 sentences), consistent with dedup shrinking the example bank. N=1; CI comes with E4.
