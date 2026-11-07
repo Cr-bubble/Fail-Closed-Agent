@@ -37,6 +37,20 @@ not shippable; the production bank is what the contest binary shipped.
 
 ## Remaining for E4
 
-- 4 more legacy-bank gpt runs (N→5) — launched 2026-11-08.
-- haiku N=5 (k50 production) ≈ $5.5 — awaiting user approval per cost rule.
+- legacy-bank gpt runs: STOPPED at N=2 after the cost correction below (95.1 / 95.6).
+- haiku N=5 (k50 production): re-estimate via 20-sentence usage probe BEFORE proposing (script's $5.5 figure untrustworthy).
 - McNemar between adjacent rungs once N complete.
+
+## 2026-11-08 COST CORRECTION (post-mortem)
+
+route_eval's built-in estimate ($0.15/run "with caching") assumes Anthropic's
+0.1x cache-read rate; OpenAI's cached-input discount is only 0.5x, and the
+catalog has grown to ~12.8k tokens (+ ~1.9k uncached dynamic block at k=50).
+Measured-size real cost per full 1,420-sentence gpt-4o-mini run:
+  k=50 ≈ $1.8/run, catalog-only ≈ $1.4/run  (≈10x the script's line).
+Today's 13 full gpt runs ≈ $20; the E4 10-run batch alone ≈ $16/hour — matches
+the observed spend. Legacy-bank series stopped at N=2 (95.1, 95.6) — the
+hypothesis needed N=1; variance band comes from the production-bank N=5 series.
+Rule going forward: quote real, measured-size costs before any batch; never
+trust the in-script estimate for OpenAI; for haiku batches, measure usage on a
+20-sentence probe and extrapolate before launching.
