@@ -1,0 +1,162 @@
+[
+ {
+  "case": "test051",
+  "req": 4,
+  "metric": "depth",
+  "official": 55,
+  "calib": 55,
+  "best": 55,
+  "cost_min": 26,
+  "gap_pts": 0.5273
+ },
+ {
+  "case": "test088",
+  "req": 3,
+  "metric": "gate_count",
+  "official": 10444,
+  "calib": 10434,
+  "best": 10434,
+  "cost_min": 5796,
+  "gap_pts": 0.4445
+ },
+ {
+  "case": "test062",
+  "req": 4,
+  "metric": "depth",
+  "official": 286,
+  "calib": 286,
+  "best": 286,
+  "cost_min": 161,
+  "gap_pts": 0.4371
+ },
+ {
+  "case": "test049",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 922,
+  "calib": 888,
+  "best": 888,
+  "cost_min": 773,
+  "gap_pts": 0.1295
+ },
+ {
+  "case": "test061",
+  "req": 4,
+  "metric": "depth",
+  "official": 8,
+  "calib": 8,
+  "best": 8,
+  "cost_min": 7,
+  "gap_pts": 0.125
+ },
+ {
+  "case": "test060",
+  "req": 4,
+  "metric": "depth",
+  "official": 9,
+  "calib": 9,
+  "best": 9,
+  "cost_min": 8,
+  "gap_pts": 0.1111
+ },
+ {
+  "case": "test064",
+  "req": 4,
+  "metric": "depth",
+  "official": 10,
+  "calib": 10,
+  "best": 10,
+  "cost_min": 9,
+  "gap_pts": 0.1
+ },
+ {
+  "case": "test055",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 1538,
+  "calib": 1538,
+  "best": 1538,
+  "cost_min": 1479,
+  "gap_pts": 0.0384
+ },
+ {
+  "case": "test057",
+  "req": 4,
+  "metric": "depth",
+  "official": 56,
+  "calib": 56,
+  "best": 56,
+  "cost_min": 54,
+  "gap_pts": 0.0357
+ },
+ {
+  "case": "test048",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 10493,
+  "calib": 10493,
+  "best": 10493,
+  "cost_min": 10205,
+  "gap_pts": 0.0274
+ },
+ {
+  "case": "test080",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 1388,
+  "calib": 1380,
+  "best": 1380,
+  "cost_min": 1359,
+  "gap_pts": 0.0152
+ },
+ {
+  "case": "test069",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 11088,
+  "calib": 11088,
+  "best": 11088,
+  "cost_min": 10937,
+  "gap_pts": 0.0136
+ },
+ {
+  "case": "test052",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 4399,
+  "calib": 4415,
+  "best": 4399,
+  "cost_min": 4350,
+  "gap_pts": 0.0111
+ },
+ {
+  "case": "test067",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 13968,
+  "calib": 13966,
+  "best": 13966,
+  "cost_min": 13852,
+  "gap_pts": 0.0082
+ },
+ {
+  "case": "test087",
+  "req": 3,
+  "metric": "gate_count",
+  "official": 5482,
+  "calib": 9913,
+  "best": 5482,
+  "cost_min": 5444,
+  "gap_pts": 0.0069
+ },
+ {
+  "case": "test056",
+  "req": 4,
+  "metric": "gate_count",
+  "official": 2660,
+  "calib": 2660,
+  "best": 2660,
+  "cost_min": 2654,
+  "gap_pts": 0.0023
+ }
+]

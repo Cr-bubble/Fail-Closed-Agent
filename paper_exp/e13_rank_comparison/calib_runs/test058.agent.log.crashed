@@ -1,0 +1,18 @@
+#RESPONSE 1
+Acknowledged. Initialized testcase "test058". All subsequent responses will be recorded to test058.log. Design state is empty and ready for commands.
+#END 1
+#RESPONSE 2
+Loaded gate-level Verilog from "testcase/test058/test058.v" successfully. Detected a single top module (flat netlist) with 1977 combinational gates and 234 flip-flops. Design state has been updated.
+#END 2
+#RESPONSE 3
+Total gate count: 2211
+AND: 0
+OR: 64
+NOT: 239
+NAND: 1221
+NOR: 409
+XOR: 4
+XNOR: 39
+BUF: 1
+DFF: 234
+#END 3
