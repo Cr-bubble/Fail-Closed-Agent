@@ -106,8 +106,10 @@ commit。【匿名注意:投稿版不印本隊官方總分,僅引公開榜單;ca
 ## 2. Background 與相關工作
 
 **LLM-EDA 代理。** ChatEDA 以 fine-tune 過的模型(AutoMage)規劃並產生 EDA 工具
-呼叫腳本;Ask-EDA 與 ORAssistant 做文件導向的 RAG 問答;RTLFixer 讓 LLM 迭代修補
-RTL 並以編譯器回饋收斂;VerilogEval 與 RTLLM 評測 RTL 程式碼生成。這些工作中 LLM
+呼叫腳本,JARVIS 與 OpenROAD Agent 走自我修正的腳本生成,ORFS-agent/StateTune 做
+流程參數調優,FluxEDA 提供跨步驟保持狀態的執行基座;Ask-EDA 與 ORAssistant 做文件
+導向的 RAG 問答;RTLFixer 讓 LLM 迭代修補 RTL 並以編譯器回饋收斂;VerilogEval 與
+RTLLM 評測 RTL 程式碼生成,NetlistBench/MCPBench 評測網表操作與 MCP 工具呼叫。這些工作中 LLM
 的輸出——腳本、程式碼、修補——都是成品的一部分,錯誤經事後檢查攔截,但攔不住的
 部分直接進入成品。本文的架構相反:LLM 輸出被關在一個表達不出不安全操作的封閉世界。
 
@@ -121,6 +123,14 @@ grounding」:本文的管線會把 LLM 填入的名稱型參數對照**當下已
 **Generate-and-verify。** LLM-Modulo 一系主張 LLM 生成、外部驗證器把關。本文可視
 為該思想在 all-or-nothing 計分領域的完整系統落地與端到端量化——並額外回答了「驗證
 器把關之後,生成端的誤差結構長什麼樣」。
+
+**任務完成驗證(concurrent work)。**〔Companion-DATE27〕在同一 testbed 上展示:
+等價檢查全過的 run 仍可含 30 個錯誤回答與 6 個被違反的約束,並提出四個由請求文字
+自推導的 task-completion 檢查(requested-edit / active-constraint / reported-fact
+/ export)。該工作與本文互補:本文把「不安全」擋在架構層(§3),該工作把「不如
+所求」接在驗證層——正是本文 drift 類損害(§4.6)所指向的缺口。EDA 之外的義務
+檢查(RefineAct、ToolGate、τ-bench)機制相近,但不處理跨請求累積的結構性約束。
+〔雙盲處理:若其 arXiv 版可用則第三人稱引用;並一律走 DAC 相關未發表工作揭露程序。〕
 
 ## 3. 系統:Fail-Closed 架構
 
@@ -264,7 +274,10 @@ stdlib BM25 與 dense/hybrid 端到端相當(1,420 句差 1 句【歷史值】)�
 
 殘餘錯誤集中於近義 intent 家族:reachable_from↔transitive_fanout 一類在歷史殘差中
 佔 52%【歷史值】,且其中部分屬標註層面的歧義(兩讀皆可辯護),將於 E10 做雙人
-再裁決後 dual-report。另一個反直覺結果:regex 優先的混合路由在 test91–100 split 上
+再裁決後 dual-report。值得注意的是跨架構證據:〔Companion-DATE27〕的 ReAct 工具
+迴圈代理在同一 testbed 上出現同款 scope 錯置(19 例 reported-fact 失敗,如 pairwise
+depth 被回報成全設計深度 10→53)——與本文 pi_to_po_depth→global_max_depth 混淆
+同構。**近義語意辨別的瓶頸跨架構成立,不是任一路由設計的 artifact。**另一個反直覺結果:regex 優先的混合路由在 test91–100 split 上
 **低於**純 LLM(91.5% vs 92.4%)【歷史值,單一 split】——regex 誤攔截的句子永遠
 到不了 LLM,而 LLM 的錯誤尚有修正迴路可救。
 
@@ -321,6 +334,8 @@ demonstrations, not the tool list*。附帶發現:kNN 多數決(vote@5)在兩協
 
 這個實驗把架構敘述轉成可檢驗的命題,同時誠實暴露兩件事:guard 的語意邊界(drift
 類),以及「假設某操作無害」是 fail-closed 架構的典型漏洞來源(rename 案例)。
+drift 類正是〔Companion-DATE27〕的 task-completion 檢查所針對的層——兩工作構成
+「安全上限(本文)× 完成度驗證(該文)」的互補分工。
 【TODO:全量版 E6——40 測資 × p% 掃描 × 答案層損害度量】
 
 ### 4.7 量測效度(側記)
@@ -352,7 +367,7 @@ final 輪失分僅餘最佳化成本比;改進結果如下(E13):
 演算法標靶(future work)。
 (比較基準校準:提交版重跑全部 100 個 final 測資——46 題最佳化成本 27 題位元吻合、其餘偏差除一例待查外皆 ≤2% 且 14 題更優(預算制隨機性,§4.1 協定註記);抽樣 10 案例 ABC 等價全過。值得注意:重跑本身已收復 26 題官方缺口中的 10 題,其中 4 題優於全場最佳 cost_min——預算制搜索的單次抽樣遠未飽和。)
 【匿名注意:投稿版以公開榜單數字為外部基準,不印本隊官方總分;camera-ready 揭露。】
-【TODO:公開榜單 top 分數與名次】
+【TODO:公開榜單 top 分數與名次;rank-3 隊官方分數可由共同作者提供(其隊為 final rank 3),rank-2 待查】
 
 部署側:prompt cache 使每句的 token 成本下降約 79%(10,280-token 固定前綴,
 cache read 計價 ~0.1×);BM25 檢索 0.5 ms/query、零第三方依賴(45 MB 單檔
@@ -365,7 +380,7 @@ ablation grid 的邊際成本以 dollar 計。
 路由)尚未驗證【TODO:E9】。(2) haiku 主線數字(97.4%,k=50)已重驗但 N=1;歷史 pre-dedup 值 97.8
 僅用於 §4.7 的事故配對敘述。(3) gpt-4o-mini 主線 N=5(全距 ≤0.6 點)、legacy 庫 N=2;haiku N=1,補跑中。(4) 混合路由劣於純 LLM 的結論基於單一
 split。(5) 資料集釋出取決於主辦方授權【TODO:行政】。(6) drift 類損害(§4.6)
-顯示 guards 的保證以「污染後的合約」為界,句子層級的意圖一致性需要另一層驗證。
+顯示 guards 的保證以「污染後的合約」為界,句子層級的意圖一致性需要另一層驗證——〔Companion-DATE27〕提供了該層的一個實作。
 (7) 本研究以雲端 mini 級模型作為「可本地部署小模型」regime 的**能力代理**;開源
 權重模型(7–14B)的直接驗證為後續工作【TODO:E8,general framing 下優先級上升】。
 
@@ -388,3 +403,9 @@ split。(5) 資料集釋出取決於主辦方授權【TODO:行政】。(6) drift
 5. Cadence 資料釋出授權。
 6. ICCAD 名次 → §5 與 cover letter。
 7. 英文化 + IEEE 模板排版。
+8. **DAC 雙盲合規**:(a) 自引一律第三人稱;(b) 參考文獻禁用 "omitted for blind
+   review";(c) **必辦:相關未發表工作揭露**——Companion-DATE27 的 PDF 經投稿系統
+   提交給 TPC Chair(未揭露密切相關工作 = 拒稿 + 可能上報);(d) 建議請共同作者將
+   DATE 稿掛 arXiv 以利正文引用(需其確認 DATE 政策);(e) PDF metadata 清洗。
+9. 作者名單:共同作者(Companion 一作)掛二/三作——11/11 與 abstract 一併鎖定。
+10. Acknowledgment(camera-ready):AI 輔助開發/編修披露(比照 Companion 的寫法)。
