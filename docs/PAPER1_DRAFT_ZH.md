@@ -362,8 +362,8 @@ ablation grid 的邊際成本以 dollar 計。
 ## 6. Limitations 與 Threats to Validity
 
 (1) 單一 testbed:1,420 句來自單一任務的語彙;方法的 transfer(如 OpenROAD 指令
-路由)尚未驗證【TODO:E9】。(2) haiku 相關數字(97.8%、+2.5 點)為歷史量測,
-因額度凍結尚未重驗;投稿前將補驗或降級為註腳。(3) gpt-4o-mini 主線 N=5(全距 ≤0.6 點)、legacy 庫 N=2;haiku N=1,補跑中。(4) 混合路由劣於純 LLM 的結論基於單一
+路由)尚未驗證【TODO:E9】。(2) haiku 主線數字(97.4%,k=50)已重驗但 N=1;歷史 pre-dedup 值 97.8
+僅用於 §4.7 的事故配對敘述。(3) gpt-4o-mini 主線 N=5(全距 ≤0.6 點)、legacy 庫 N=2;haiku N=1,補跑中。(4) 混合路由劣於純 LLM 的結論基於單一
 split。(5) 資料集釋出取決於主辦方授權【TODO:行政】。(6) drift 類損害(§4.6)
 顯示 guards 的保證以「污染後的合約」為界,句子層級的意圖一致性需要另一層驗證。
 (7) 本研究以雲端 mini 級模型作為「可本地部署小模型」regime 的**能力代理**;開源
