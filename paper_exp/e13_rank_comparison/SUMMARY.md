@@ -38,3 +38,24 @@
 2. Independent cec on every counted-win netlist (calibration + improvement).
 3. Idle re-runs: test087 outlier; optionally test052/081/084.
 4. §6 comparison table + paper numbers (anonymization-safe wording).
+
+## FINAL RESULTS (2026-11-08 12:40, improvement phase complete)
+
+- Improvement driver: 32 jobs done (16 open cases × {5d549c5, cdcf9af re-draw}),
+  09:33–12:05, zero failures.
+- Scoring (score_improvement.py → improve_scores.json): best-of-candidates per
+  case, official ratio rule, cap at 1.0.
+- **Improved total: 671.983 / 674 (official 671.366, gain +0.617).**
+  16 of 26 gap cases improved; attribution: +0.600 re-sampling the submitted
+  engine (budget-bound stochastic search is far from saturated), +0.017 engine
+  portfolio (test048 via cdcf9af re-draw 10493→10333; test052 via 5d549c5
+  4399→4392). 4 cases beat the all-team cost_min (test053/082/083/086).
+- **Independent verification: cec_wins.py — 17/17 winning netlists EQUIV**
+  (ABC, 600 s timeout each; cec_wins.json).
+- Resistant gaps (immune to re-sampling): test051 (55 vs min 26), test062
+  (286 vs 161), test088 (10434 vs 5796) = 1.41 pts — need algorithmic work
+  (future work in the paper; candidates: longer budgets, word-level templates
+  on the specific cones, dedicated depth strategies).
+- Paper framing: "restart portfolio, every individual run within the official
+  300 s/request budget; best-of-K disclosed as K≤3"; single-run expectation =
+  calibration row; table numbers all cec-verified.
