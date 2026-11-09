@@ -62,14 +62,14 @@ teams maintain a fine-tuning pipeline.
 \begin{figure*}[t]
 \centering
 \input{figs/fig_arch_tikz.tex}
-\caption{The fail-closed agent. (a)~Intent routing (Section~\ref{sec:routing}):
-the LLM only translates; schema validation and name grounding send an invalid
-intent back for one corrective retry, and a request that is still invalid ends
-in a safe no-op. (b)~Guarded execution (Section~\ref{sec:commit}): a mutation
-runs on a snapshot that is committed only if the guards pass; otherwise the
-snapshot is discarded and the netlist is unchanged. Name grounding, analysis,
-and transformation read the persistent netlist state (dashed gray); only
-commits write it. Dashed red: failure paths.}
+\caption{Overview of the fail-closed netlist agent. (a)~The LLM maps each
+natural-language request to an intent, using the complete operation catalog
+and additional BM25-retrieved demonstrations. Schema validation and grounding
+against the current netlist allow one corrective retry; a request that is
+still invalid yields a safe no-op. (b)~Read-only queries execute directly,
+whereas mutations operate on a snapshot and commit only after the equivalence
+and structural checks pass; rejected candidates leave the persistent netlist
+unchanged. Dashed gray arrows: reads of the current netlist.}
 \label{fig:arch}
 \end{figure*}
 
