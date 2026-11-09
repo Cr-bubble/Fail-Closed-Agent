@@ -113,7 +113,7 @@ parameter grounding, and a measured account of what the combination prevents.
 
 ## 3. Fail-Closed Agent Design
 
-![](../paper/figs/fig_arch.png)
+![](../paper/figs/fig_arch_v2.png)
 
 **Fig. 1.** The fail-closed agent. (a) Routing (§3.2): the LLM only translates;
 schema validation and name grounding against the live netlist return a

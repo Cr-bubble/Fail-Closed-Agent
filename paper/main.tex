@@ -142,7 +142,7 @@ parameter grounding, and a measured account of what the combination prevents.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figs/fig_arch.pdf}
+\includegraphics[width=\textwidth]{figs/fig_arch_v2.png}
 \caption{The fail-closed agent. (a)~Routing (Section~\ref{sec:routing}): the
 LLM only translates; schema validation and name grounding against the live
 netlist return a rejection reason for one corrective retry (dashed red), and
@@ -285,7 +285,7 @@ runs. $^\dagger$Upper bound: the bank shares the stress set's distribution.}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}Xlrc@{}}
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}Xlrc@{}}
 \toprule
 Router & Labeled data & Intent acc. & $N$ \\
 \midrule
@@ -356,7 +356,7 @@ exclusive).}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}lXcc@{}}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}Xcc@{}}
 \toprule
 Outcome & Meaning & Before fix & After fix \\
 \midrule
@@ -410,7 +410,7 @@ with two post-contest re-evaluations of the same 46 optimization requests.
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}lcX@{}}
+\begin{tabularx}{\columnwidth}{@{}lc>{\raggedright\arraybackslash}X@{}}
 \toprule
 Run & Score (/46) & Compute \\
 \midrule
