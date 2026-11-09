@@ -142,8 +142,8 @@ grounding」:本文的管線會把 LLM 填入的名稱型參數對照**當下已
 系統定義約 80 個 intent,涵蓋分析(計數、深度、cone、路徑、連通性、功能性質)、
 轉換(basis 重映射、buffer 插入、清理、改名)與最佳化(深度/閘數)。每個 intent
 有必選與可選參數的 schema;枚舉型參數(basis、方向、模式等)有封閉值域。完整的
-intent catalog——含每個 intent 的說明與**近義 intent 的消歧區塊**——以約 10,280
-tokens 常駐於 system prompt 的固定前綴,經 prompt cache 攤銷(token 成本約 −79%)。
+intent catalog——含每個 intent 的說明與**近義 intent 的消歧區塊**——以約 12.8k
+tokens 常駐於 system prompt 的固定前綴,經 prompt cache 攤銷(Anthropic 快取計價下輸入成本約 −79%)。
 
 關鍵設計:**catalog 永遠全量在場**。檢索(§3.2)只負責往 prompt 增補相似例句,
 永遠不裁剪 intent 清單本身——因此任何檢索失敗的代價只是幾個無用的示範,**不可能把
@@ -224,7 +224,7 @@ out:查詢句自身測資的例句不得進入 prompt。指標:intent 準確率(
 | 裸 LLM(僅 intent 名稱清單),claude-haiku-4.5 | **78.7%** | 1 |
 | 完整 catalog(無檢索),gpt-4o-mini | **88.4%**(88.3–88.7) | 5 |
 | + BM25 k=50,production 庫(recall@50 82.1%) | **88.9%**(88.6–89.2) | 5 |
-| + BM25 k=50,legacy 高召回庫(recall@50 96.4%,LOCO) | **95.1 / 95.6%** | 2 |
+| + BM25 k=50,legacy 高召回庫(recall@50 97.0%,LOCO) | **95.1 / 95.6%** | 2 |
 | claude-haiku-4.5 + BM25 k=50,production 庫 | **97.4%**(歷史 pre-dedup 97.8) | 1 |
 
 歷史 ladder(86.9 → +消歧 ~89.5 → +k25 94.3 → +k50 95.3)是在 legacy 庫時代量的
@@ -245,7 +245,7 @@ check_dangling(10 次)——全部是近義 intent 家族。兩段修正的歷�
 
 【Table 1 placeholder:檢索後端 × recall@k × e2e × 延遲;**兩個 bank 分欄標示**】
 
-檢索數字必須標明例句庫:歷史量測(六後端比較、recall 93.9@25 / 96.4@50、union
+檢索數字必須標明例句庫:歷史量測(六後端比較、recall 93.9@25 / 96.4@50(去重前)、union
 98.7@50)是在**舊評測庫**(examples.jsonl,2,130 列,LOCO)上做的【歷史值】;現行
 **production 庫**(public, 940 列)上的新量測為:BM25 recall@5/10/25/50/100 =
 60.2 / 66.5 / 76.3 / 82.1 / 85.6%,首個正確 op 的中位 rank = 2,14.4% 的查詢在
@@ -255,7 +255,7 @@ k=100 內完全撈不到正確 op,其中 3 個 intent(60 句,4.2%)在庫中**零
 脫鉤是**有條件的**,而條件本身是發現:(i) claude-haiku-4.5 在 recall@50 僅
 82.1% 的 production 庫上達 97.4%——檢索漏掉的由常駐 catalog 接住(§3.1 的設計
 紅利),對夠強的小模型,召回率確實與端到端脫鉤;(ii) gpt-4o-mini 暴露另一面:
-同是 k=50,庫從 production 換成高召回 legacy(recall 82.1%→96.4%),端到端
+同是 k=50,庫從 production 換成高召回 legacy(recall 82.1%→97.0%),端到端
 88.9%→95.1/95.6(+6.4 點,N=2)——**對更弱的模型,檢索品質重新變得重要**(注意 legacy
 庫含與評測句同分布的標註例句,只能以 LOCO 作量測上界、不可部署;production 庫
 才是出賽組態);(iii) 檢索量本身不是解方:production 庫上 k=5→100 端到端全距僅 1.3 點且非單調;
@@ -369,9 +369,9 @@ final 輪失分僅餘最佳化成本比;改進結果如下(E13):
 【匿名注意:投稿版以公開榜單數字為外部基準,不印本隊官方總分;camera-ready 揭露。】
 【TODO:公開榜單 top 分數與名次;rank-3 隊官方分數可由共同作者提供(其隊為 final rank 3),rank-2 待查】
 
-部署側:prompt cache 使每句的 token 成本下降約 79%(10,280-token 固定前綴,
+部署側:prompt cache 在 Anthropic 計價下使每句輸入成本下降約 79%(12.8k-token 固定前綴,
 cache read 計價 ~0.1×);BM25 檢索 0.5 ms/query、零第三方依賴(45 MB 單檔
-binary);1,420 句全評在 12 並發下 2.5 分鐘、約 $0.25(gpt-4o-mini)——完整
+binary);1,420 句全評在 12 並發下 2.5 分鐘、$1.4–1.8(gpt-4o-mini,API 用量實測)——完整
 ablation grid 的邊際成本以 dollar 計。
 
 ## 6. Limitations 與 Threats to Validity
