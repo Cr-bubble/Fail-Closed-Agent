@@ -35,8 +35,8 @@ otherwise it is rolled back. We state the assumptions under which committed
 netlists remain equivalent and separate this functional guarantee from request
 conformance, which it does not provide. On a 1,420-request paraphrase stress
 set for the ICCAD 2026 CAD Contest Problem A, the full intent catalog reaches
-88.4\% routing accuracy with gpt-4o-mini, against 61.4\% for a bare intent
-list and at most 73.3\% for supervised classifiers; claude-haiku-4.5 reaches
+88.4\% routing accuracy with GPT-4o-mini, against 61.4\% for a bare intent
+list and at most 73.3\% for supervised classifiers; Claude Haiku 4.5 reaches
 97.4\%. Fault injection exposed one guard-bypassing operation; after its
 repair, none of 24 injected faults produced an unsafe commit, while 7 produced
 equivalent but non-conforming edits.
@@ -276,6 +276,47 @@ Section~\ref{sec:fault} tests it directly.
 \section{Evaluation}
 \label{sec:eval}
 
+\begin{table*}[t]
+\centering
+\caption{Intent routing accuracy on the author-written 1,420-request paraphrase
+stress set. Values are percentages; LLM values are means over $N$ runs. Exact
+obj.\ requires the intent and all parameters to be correct.}
+\label{tab:routing}
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lllrrc@{}}
+\toprule
+Router & Prompt / configuration & Data source & Intent (\%) & Exact obj.\ (\%) & $N$ \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Non-LLM baselines}} \\
+BM25 NN & --- & Production bank & 47.4 & --- & --- \\
+SBERT + kNN & --- & All labels (LOCO) & 72.8 & --- & --- \\
+TF-IDF + SVM & --- & All labels (LOCO) & 73.3 & --- & --- \\
+\addlinespace[3pt]
+\multicolumn{6}{@{}l}{\textit{GPT-4o-mini ablations}} \\
+GPT-4o-mini & Bare intent list & None & 61.4 & 55.4 & 3 \\
+GPT-4o-mini & Full catalog & None & 88.4 & 79.5 & 5 \\
+GPT-4o-mini & Full catalog + BM25 & Production bank & 88.9 & 82.0 & 5 \\
+GPT-4o-mini & Full catalog + BM25 & High-recall bank$^\dagger$ & 95.4 & 91.6 & 2 \\
+\addlinespace[3pt]
+\multicolumn{6}{@{}l}{\textit{Claude Haiku 4.5 ablations}} \\
+Claude Haiku 4.5 & Bare intent list & None & 78.7 & 72.3 & 1 \\
+Claude Haiku 4.5 & Full catalog & None & 96.4 & 91.4 & 3 \\
+Claude Haiku 4.5 & Full catalog + BM25 & Production bank & \textbf{97.4} & \textbf{92.7} & 1 \\
+\bottomrule
+\end{tabular*}
+
+\vspace{3pt}
+\parbox{\textwidth}{\footnotesize $^\dagger$The high-recall bank uses LOCO
+exclusion and shares the stress set's distribution; it is an optimistic upper
+bound. LOCO: leave-one-testcase-out. For non-LLM methods, ``Data source''
+denotes training or reference data; for LLMs, retrieved demonstrations ($k{=}50$).
+Min--max over runs: GPT-4o-mini bare 61.1--61.8, full catalog 88.3--88.7,
+production bank 88.6--89.2, high-recall bank 95.1--95.6; Claude Haiku 4.5 full
+catalog 96.3--96.5.}
+\end{table*}
+
 \subsection{Setup}
 \label{sec:setup}
 
@@ -295,51 +336,16 @@ accuracies on it may be optimistic.
 
 \textbf{Metric and models.} The primary metric is intent accuracy: whether the
 selected operation is correct. We use the two contest-mandated models,
-gpt-4o-mini and claude-haiku-4.5, at temperature 0.2, and repeat the
-gpt-4o-mini headline settings five times ($N{=}5$). Evaluation rounds run
+GPT-4o-mini and Claude Haiku 4.5, at temperature 0.2, and repeat the
+GPT-4o-mini headline settings five times ($N{=}5$). Evaluation rounds run
 strictly one at a time, and any round with a degraded API call is discarded,
 because rate limiting can silently turn LLM calls into no-op responses.
 
 \subsection{Routing Accuracy}
 \label{sec:routing-acc}
-
-\begin{table}[t]
-\caption{Intent routing accuracy on the 1,420-request stress set (means over
-$N$ runs). Exact obj.: intent and all parameters correct. Bank: source of the
-BM25-retrieved examples ($k{=}50$).}
-\label{tab:routing}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}Xrrc@{}}
-\toprule
-Method & Configuration & Intent & Exact obj. & $N$ \\
-\midrule
-\multicolumn{5}{@{}l}{\emph{Non-LLM baselines}} \\
-BM25 NN & production bank & 47.4\% & -- & -- \\
-SBERT + kNN & all labels, LOCO & 72.8\% & -- & -- \\
-TF-IDF + SVM & all labels, LOCO & 73.3\% & -- & -- \\
-\midrule
-\multicolumn{5}{@{}l}{\emph{LLM-based routing}} \\
-gpt-4o-mini & bare intent list & 61.4\% & 55.4\% & 3 \\
-claude-haiku-4.5 & bare intent list & 78.7\% & 72.3\% & 1 \\
-gpt-4o-mini & full catalog & 88.4\% & 79.5\% & 5 \\
-claude-haiku-4.5 & full catalog & 96.4\% & 91.4\% & 3 \\
-gpt-4o-mini & catalog + production bank & 88.9\% & 82.0\% & 5 \\
-gpt-4o-mini & catalog + high-recall bank$^\dagger$ & 95.4\% & 91.6\% & 2 \\
-claude-haiku-4.5 & catalog + production bank & 97.4\% & 92.7\% & 1 \\
-\bottomrule
-\end{tabularx}
-
-\vspace{2pt}
-\parbox{\columnwidth}{\footnotesize Min--max over runs: gpt-4o-mini bare 61.1--61.8,
-full catalog 88.3--88.7, production bank 88.6--89.2, high-recall bank
-95.1--95.6; claude-haiku-4.5 full catalog 96.3--96.5. $^\dagger$Upper bound: the bank
-shares the stress set's distribution. LOCO: leave-one-testcase-out.}
-\end{table}
-
-\textbf{Catalog information is the largest lever.} A bare list of intent names
-yields 61.4\% with gpt-4o-mini; the full catalog---descriptions, parameter
+\textbf{Catalog information is the largest lever.} Table~\ref{tab:routing}
+lists all configurations. A bare list of intent names
+yields 61.4\% with GPT-4o-mini; the full catalog---descriptions, parameter
 schemas, and disambiguation entries together---raises it to 88.4\% (+27.0
 points). The bare condition keeps the schema-feedback retry, whose fixed
 message mentions class-level depth intents, and contains no other catalog
@@ -350,28 +356,28 @@ points with the full catalog, so the catalog helps the weaker model more.
 available, the best classifier reaches 73.3\% (TF-IDF features with a linear
 SVM), and frozen sentence embeddings reach 72.8\%. Classifiers and LLMs are
 scored on the same operation-level metric; the LLM additionally fills in
-parameters (84.6\% parameter accuracy for gpt-4o-mini with the catalog,
-94.1\% for claude-haiku-4.5 with retrieval), which the classifiers do not
+parameters (84.6\% parameter accuracy for GPT-4o-mini with the catalog,
+94.1\% for Claude Haiku 4.5 with retrieval), which the classifiers do not
 attempt. With only the production bank, three operations have no examples and
 are unreachable for nearest-neighbor routing, whereas the LLM reaches them
 through the catalog.
 
 \textbf{Retrieval adds little with the production bank.} Retrieving $k{=}50$
-examples from the production bank adds 0.5 points for gpt-4o-mini and 1.0
-point for claude-haiku-4.5 over the catalog alone, and retrieval depth barely
-matters: for gpt-4o-mini, $k$ from 5 to 100 spans 88.1--89.4\% without a
+examples from the production bank adds 0.5 points for GPT-4o-mini and 1.0
+point for Claude Haiku 4.5 over the catalog alone, and retrieval depth barely
+matters: for GPT-4o-mini, $k$ from 5 to 100 spans 88.1--89.4\% without a
 monotone trend, while label recall rises from 60\% to 86\%. The catalog thus
-carries most of the routing accuracy: claude-haiku-4.5 reaches 96.4\% with no
+carries most of the routing accuracy: Claude Haiku 4.5 reaches 96.4\% with no
 retrieval at all, even though the production bank's label recall at $k{=}50$
 is only 82.1\%. Retrieval pays off only when the examples closely match the
-requests: the high-recall bank adds 6.4 points for gpt-4o-mini, an upper bound
+requests: the high-recall bank adds 6.4 points for GPT-4o-mini, an upper bound
 because it shares the stress set's distribution, and an effect comparable to
 switching models (+8.0 points with the catalog alone).
 
 \subsection{Failure Analysis}
 \label{sec:failures}
 
-Moving gpt-4o-mini from the production to the high-recall bank removes 84\% of
+Moving GPT-4o-mini from the production to the high-recall bank removes 84\% of
 give-ups (44 to 7) but only 43\% of wrong-operation picks (110 to 63): good
 examples mainly help the model recognize unfamiliar phrasing. What remains is
 dominated by confusions between semantically similar operations, such as
