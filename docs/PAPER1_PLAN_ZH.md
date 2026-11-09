@@ -81,3 +81,24 @@
 2. 97.8% 是 dedup 前、quota 中斷未重跑 → E3 取代。
 3. 多數結果為單次 run → E4 補誤差棒。
 4. hybrid<pure 的結論只基於 test91-100 單一 split → E4/E5 內重驗。
+
+---
+
+## v2 狀態與投稿前必辦(2026-11-09)
+
+v2 稿:`docs/PAPER1_DRAFT_EN_v2.md`(PDF:`paper/PAPER1_v2.pdf`),依外部 review(modify_tip.md)重構:
+主軸改為架構(A),routing 研究為支撐;C1 架構 / C2 routing 評估 / C3 驗證與界限。
+
+**v2 §3.3–3.4 描述的是「code 修正後」的行為,投稿前 code 必須對齊:**
+1. `cada/guards/validators.py`:undecided(None)改為回滾(目前只在 False 回滾)。
+2. 最佳化 handler(h_opt_depth / h_opt_area / optimize_cone 等 7 處直接 `self.state.current = res`)
+   已由 resynth / abc_opt 要求 `proof is True`——確認並在 code 註解中對齊 §3.3 的單一接受規則。
+3. 預先計算解(prepared):目前可憑抽樣模擬成為最終結果 → 改為須線上 cec 證明(`is True`)才可 commit。
+4. 修正後重跑:40-case evaluator 回歸、E6 三個 rename escape、E13 受影響 case 抽查。
+
+**v2 已修正的事實錯誤**:評測集為團隊自寫的改寫壓力集(非比賽請求);分類器與 LLM 為同一指標
+(刪除 "biased against the LLM");73–99% 的定義;best-of-K 分數改為 post-contest 上界;
+「15 題較好」;bank 品質 vs 模型的量級比較。
+
+**其他待辦**:元件 ablation(拿掉消歧 / 說明 / 重試,gpt 約 $7,選做);參考文獻逐條核對;
+中文母稿與 v2 同步(視需要);確認決賽提交 build 是否為預設純 LLM 模式。
