@@ -1,0 +1,198 @@
+DEEP: 5
+
+#### "Verifiable LLM Agent Framework for EDA (gate-level netlist case study)" is a project heading on a h | https://zhaozhangjin85-max.github.io/ (mirror: https://zhangjin-zhao-eda.zhaozhangjin85.chatgpt.site/; CV: https://zhaozhangjin85-max.github.io/assets/Zhangjin_Zhao_CV.pdf). No arXiv ID, PDF or paper title exists. | The earliest public trace is 2026-11-06. The GitHub Pages repo was created then, its first commit "Publish research homepage v15.7 and CV v15.3" is at 2026-11-06T17:47Z, the generator timestamp is 2026-11-06T16:19Z, and the page says "Updated November 5, 2026". The label "v15.7" suggests earlier private or unpublished versions. There is no dated paper. This is concurrent work (a parallel DAC 2027 submission), not prior work. | exists True | THREAT medium | must_cite False
+DOES: Source: the homepage project text and the CV, quoted directly. No paper is available. It is an ICCAD 2026 Problem A agent (Honorable Mention, team cada1078): "the LLM serves as semantic parser and planner emitting schema-typed tool calls, while a deterministic execution layer over a persistent design state applies them under a propose–verify–commit protocol with formal equivalence checking and rollback." Language "is mapped to 81 schema-typed tools (JSON-schema contracts, native function calling on both APIs) built from composable relational operators over netlist relations (filter, argmax, group, join)". A "stateful design session holds the before/after IR, structural constraints and cached
+OVERLAP: C1, overlap high: the core system design is nearly the same. (a) Typed operations: they have 81 schema-typed tools, we have about 80 typed intents. Both use deterministic execution, and the LLM does not write the netlist. (b) Both keep a persistent design state across requests. (c) Both apply edits to a snapshot, run combinational equivalence via ABC (theirs through a Yosys/ABC SAT miter, ours ABC cec) plus structural-constraint checks, then commit or roll back. Treat (a) to (c) as independently converged and do not claim them as unique.
+
+C1, possible differences (from homepage text only, so weak evidence):
+- Their LLM is a "semantic parser and planner" over composable relational operators (filter/argmax/group/join), with execution results fed back as observations. That suggests multi-step composition in a ReAct-style loop. Ours selects exactly one intent from a closed catalog.
+- Their "
+DIFF: If a preprint appears and can be cited: "Concurrently, another Problem A team reports an agent whose LLM emits schema-typed calls to 81 composable operators, with edits gated by a propose-verify-commit loop using Yosys/ABC equivalence checking and rollback [X]. We likewise gate edits on equivalence, but restrict the LLM to choosing one intent from a closed catalog, grounded against the live netlist and failing closed to a no-op. We also state the assumptions under which a commit implies equivale
+
+#### netlist-agent: A natural-language front end over a gate-level Verilog netlist engine (open half of a | https://github.com/JerryFlyTiger/netlist-agent | 2026-08-31 (repo created and initial public commit at 02:26 UTC; that commit's README already states the core design idea). There are 44 commits, all titled "Sync from private"; the last push was 2026-11-06. It is public prior disclosure about 2.3 months before our November 2026 submission, so it is not concurrent work. | exists True | THREAT medium | must_cite True
+DOES: Read from the README and the code (router.py, cli.py, llm/client.py, llm/tools_schema.py, constraints.py, abc_bridge.py, abc_synth.py). The full private system is a regex router of about 120 patterns over 95-98 handlers that answers most requests with no LLM call. The public build replaces that router with a stub, so every request goes to the LLM fallback. That fallback is a multi-turn ReAct-style tool-calling loop over 65 typed tool schemas: up to 8 rounds, several calls per round, tool errors returned to the model as JSON, and the model writes the final plain-text answer itself. The system prompt says it is "the fallback natural-language interpreter ... invoked only when a request did not 
+OVERLAP: C1, closed catalog and no generated code: strong overlap in spirit. Their LLM only calls 65 typed deterministic tools and never writes netlists or scripts. Their README slogan ("The model is there to decide which operation a sentence means. It never computes the answer.") is close to our title. Differences:
+- In their full system the LLM is not the router; a regex dispatcher is, and the LLM is only a fallback.
+- Their LLM is a multi-step agent that can chain arbitrary reads and mutations within one request and writes free-form reply text. We map each request to exactly one intent and produce the reply deterministically.
+
+C1, deterministic execution: same.
+
+C1, equivalence gate with rollback: partial overlap only.
+- Accept-only-if-cec-equivalent on a copy exists, but only for the ABC resynthesis tools (do_optimize_*).
+- In the released LLM path, the deterministic in-place edits (remap_to_
+DIFF: Concurrently with our contest work, the open-source netlist-agent [X] (August 2026) also lets an LLM pick from typed tools over a deterministic engine and accepts ABC-resynthesized candidates only after cec, but there the LLM is a multi-turn fallback behind a regex router that chains tool calls and writes its own reply text, its rule-based edits change the live netlist without a per-commit equivalence gate or rollback, and it reports no routing-accuracy measurement. We instead make the LLM the s
+
+#### LLM-Assisted Netlist Exploration and Transformation (ICCAD 2026 CAD Contest Problem A, team cada1043 | https://github.com/zcgilbert/iccad-2026-llm-netlist-agent | Repo created 2026-08-30T09:02Z. The history is squashed into one commit (authored 2026-09-03 +0800, committed 2026-09-22 01:15 +0800), last pushed 2026-09-21T17:18Z. Because the history is squashed, the earliest provably public content is 2026-09-21. That version already contains the post-hoc analysis of the official hidden-set results. This is about 7 weeks before our November 2026 submission: concurrent contest work, publicly visible first, non-archival. I found no arXiv paper by this team. One arXiv API author query found only an unrelated chemistry paper. My web-search budget ran out, so I could not search further. | exists True | THREAT medium | must_cite True
+DOES: Read from the cloned repo: README, docs/ARCHITECTURE.md, ARCHITECTURE_NOTES.md, RELATED_WORK_BORROW.md, results.md, all routing_robustness reports, and the source files agent.py, tools.py, entity_guard.py, funceq.py, abc_io.py and planner.py.
+
+1. Routing. A deterministic regex router (router.py, about 2k lines) is the main interpreter. A 'strong' match is dispatched directly with no LLM call. A 'weak' match is arbitrated against the LLM using hand-written rules for mutating vs read-only and history follow-ups. Only when nothing matches is gpt-4o-mini / claude-haiku-4.5 asked to choose exactly one of 63 function-calling tool schemas (11 mutating). It sees a short state summary, never the netl
+OVERLAP: C1, closed catalog and no free-form generation: strong overlap. They also have a fixed tool set (63 tools, function calling, typed JSON-schema arguments), the LLM never computes or writes netlists or code, and execution is deterministic. Differences: (a) the main interpreter is a hand-written regex router, and the LLM decides only unmatched or weak-match requests. 669 of 674 official answers were identical under both models, so the LLM almost never decided anything. In our system the LLM routes every request and there are no rules. (b) They add an LLM-written multi-step plan over read-only primitives. Ours is exactly one intent per request.
+
+C1, checking names against the current state with one corrective retry: real overlap that the candidate report missed. entity_guard checks net and gate arguments against ctx.design (the current, already changed design), then repairs from the request 
+DIFF: Concurrently, another team in the same contest released code [cada1043] that also limits the LLM to function calling over a fixed tool set, checks argument names against the current design, and wraps every edit in a snapshot–CEC–rollback transaction. In that system a hand-written regex router decides most requests, the LLM handles only wording the router misses, and an edit is committed when equivalence is inconclusive (falling back to simulation). We instead route every request through the LLM 
+
+#### Reproduction Bundle for LLM-Assisted Netlist Exploration and Transformation (team cada1079). The bun | Concept DOI 10.5281/zenodo.20917600. v1 is 10.5281/zenodo.20917601 and v2 is 10.5281/zenodo.20918454 (https://zenodo.org/records/20918454). | The v1 Zenodo record was created 2026-06-26 07:15 UTC and v2 the same day at 07:37 UTC. The report PDF was built 2026-06-26, and the slides carry a talk date of 2026-06-18. That is about 4.5 months before our November 2026 submission, so this is prior public work, not concurrent work. | exists True | THREAT medium | must_cite True
+DOES: I read the full report, the slides, the README and the core source (agent.py, tools/registry.py, tools/transform.py, transform/base.py, analysis/cec.py, analysis/graph.py, transform/depthopt.py). The report says the LLM (claude-haiku-4-5, with a gpt-4o-mini adapter) is kept to "selecting and parameterizing operations" over 42 JSON-schema-typed tools in five families, run by a from-scratch deterministic Python engine with Berkeley ABC behind it. In practice agent.py is a standard multi-turn function-calling loop (MAX_TOOL_ITERS=8) that can make several tool calls per request, keeps the full chat history, and lets the LLM write the final answer in free text; the transcripts show requests answe
+OVERLAP: C1, closed catalog vs free-form generation: same idea. Both use a closed set of typed deterministic operations (42 tools vs our ~80 intents), and the LLM never edits the netlist or writes code. The difference is the LLM's role. Theirs runs an open loop of up to 8 iterations with several tool calls, and the LLM writes the answer and may reason from chat history. Ours maps each request to exactly one intent.
+
+C1, deterministic execution: the same.
+
+C1, equivalence gate before commit, with rollback: partly the same. They also mutate a copy, run a register-cut SAT miter and commit or revert. Four differences:
+- Their cut compares PO and DFF.D only, so changes to CK/RN/SN go unchecked (analysis/cec.py equiv_netlists, _pseudo_inputs).
+- The gate is not fail-closed. tools/transform.py sets `verify = len(STATE.netlist.gates) < 2000` for remap_gates, and optimize_cone_depth uses `verify=False`; o
+DIFF: An earlier, non-peer-reviewed course report for the same contest problem [Han 2026, Zenodo] also exposes a deterministic netlist engine to an LLM through 42 typed tools and checks rewrites with a register-cut SAT miter (ABC fallback) before committing them. However, it uses an open multi-call tool loop in which the LLM writes the final answer, does not ground names against the current netlist, skips the equivalence check for large basis remaps and for depth optimization, and evaluates neither ro
+
+#### AutoEDA: Enabling EDA Flow Automation through Microservice-Based LLM Agents (the title is the same i | arXiv:2508.01012 (https://arxiv.org/abs/2508.01012). Journal version: ACM TODAES, DOI 10.1145/3842675. | 2025-08-01 (v1). v2 followed on 2026-02-24 and the ACM TODAES version went online on 2026-08-20 (Crossref). This is clearly prior art, not concurrent work. | exists True | THREAT medium | must_cite True
+DOES: I read the full text of v1 and v2 (arXiv HTML) and the TODAES abstract via Crossref. AutoEDA controls RTL-to-GDSII flows (Synopsys DC synthesis, then Innovus placement, CTS and routing) from natural language. It has three layers: client, MCP server and executor.
+
+- **Client (v2, Sec 3.2):** a locally fine-tuned Qwen3-0.6B maps the query to a schema-driven JSON IR {tool, params}. The schema has typed fields (numbers with units, enums, booleans, lists), stage identifiers and cross-stage constraints. Schema compliance comes from grammar-constrained decoding plus rule-based post-processing. v1 used prompt engineering on a frozen model with no fine-tuning.
+- **MCP server (Sec 3.3):** decomposes t
+OVERLAP: **C1, routing half (real overlap, and it predates us):**
+- AutoEDA already sets up the EDA-specific principle that the LLM emits typed parameters into a closed schema, never Tcl, and that deterministic templates do the execution. v1 even says the design keeps "complete determinism".
+- So our paper must not present "the LLM never writes scripts or code in an EDA agent" as new. Our headline "Routing, Not Reasoning" framing needs this citation.
+
+**Where the C1 designs differ:**
+- **Granularity:** AutoEDA has 4 coarse stage-level flow tools with roughly 15-25 parameters each. Its problem is slot-filling and configuration extraction, and one request can span several stages. We have about 80 fine-grained analysis/edit/optimize operations and exactly one intent per request, so our problem is mostly choosing the operation.
+- **Validation philosophy is the opposite of ours:** AutoEDA repairs and 
+DIFF: AutoEDA [Lu et al., TODAES'26] likewise keeps the LLM away from Tcl: a fine-tuned client emits a schema-typed JSON IR for four stage-level flow tools, which an MCP server validates and renders through fixed templates. Its validator repairs rather than rejects (it clips or infers parameters and auto-fixes failed runs), and it is evaluated on script fidelity (CodeBLEU) and execution success, with no check of the resulting design. Our agent instead routes each request to one of ~80 fine-grained ope
+
+
+BATCH items: 69
+[high] exists=True cite=False | Verifiable LLM Agent Framework for EDA (gate-level netlist case study), Zhangjin | https://zhaozhangjin85-max.github.io/ | 2026-11 (homepage seen 2026-11-09; no submission date shown)
+     Confirmed on the homepage: the LLM is a 'semantic parser and planner emitting schema-typed tool calls', with 81 tools, propose-verify-commit on a snapshot, Yosys/ABC SAT-miter combinational CEC plus structural checks, commit or rollback, the 'result returned t
+[high] exists=True cite=False | Verifiable LLM Agent Framework for EDA (gate-level netlist case study) [DUPLICAT | https://zhaozhangjin85-max.github.io/ | 2026-11
+     Same page as the first entry: 81 typed tools, a planner with observations, snapshot plus SAT-miter CEC plus structural checks, then commit or rollback, scoring 661.4/674 against our 671.366/674; none of our grounding/no-op, register-cut, A1-A4, drift, C2 or C3
+[high] exists=True cite=False | Verifiable LLM Agent Framework for EDA (cada1078) [DUPLICATE of the first entry] | https://zhaozhangjin85-max.github.io/ | 2026-11
+     Duplicate of the first entry; the planner-with-observations vs one-intent-router distinction is confirmed by the page text ('result is returned to the agent as an observation').
+[high] exists=True cite=False | Cr-bubble/Fail-Closed-Agent: public GitHub fork of CAD-Contest-2026-ProblemA/Age | https://github.com/Cr-bubble/Fail-Closed-Agent | fork created 2026-11-05; last push 2026-11-09
+     Not prior art; this is our own system, and it is a double-blind anonymity risk. The README says the LLM 'only translates a request into one {intent, params} object and never reasons about the circuit' and mentions BM25 and '1420', and the repo name matches the
+[medium] exists=True cite=True | AgenticECO: An Agentic Framework for ECO on 3D Integrated Circuits (Ren, Han, Sh | 2608.03738 | 2026-08-04
+     The full text confirms 'fail-closed gates', apply-on-copy, verifier 'commits or rolls back' and structural-equivalence gates, but 'the model writes the program; the program writes the edits' (the opposite of routing). The task is physical 3D-IC ECO with no NL 
+[medium] exists=True cite=True | LATCH: LLM-Assisted Timing Closure Harness for Post-Route FPGA Optimisation | 2610.16625 | 2026-10-12
+     Concurrent EDA evidence for our thesis: a fixed catalogue of 9 expert recipes vs direct operations vs LLM-constructed procedures gives 98.2/71.4/17.9% functional pass. It is FPGA timing closure, with structural legality checks per candidate and simulation-only
+[medium] exists=True cite=True | On the Robustness of Agentic Function Calling (Rabinovich & Anaby-Tavor, TrustNL | 2504.00914 | 2025-04-01
+     Prior art for C2's methodology: it tests function-calling robustness to naturalistic query variations and to toolkits expanded with semantically related tools (on BFCL), so frame the paraphrase set and near-synonym residual as confirmation on a closed EDA cata
+[medium] exists=True cite=True | Route Before Response: Fail-Closed Routing for LLM-Enabled Customer-Service Soft | 2611.07534 | 2026-11-05
+     The closest cross-domain match to C1's routing half: one model call proposes a primary service action plus a registered object, deterministic code checks identifiers/rules before dispatch or a specified non-dispatch outcome, with zero false dispatches. It has 
+[medium] exists=True cite=True | Interpretable and Verifiable Hardware Generation with LLM-Driven Stepwise Refine | 2606.19387 | 2026-06-16 (v2 2026-07-13)
+     Conceptually close to C1 and the Proposition: an LLM agent iteratively applies a fixed set of correctness-preserving transformation rules, so the result is correct whenever the rules are sound. The setting is spec-to-RTL, not NL edits on a live netlist with a 
+[medium] exists=True cite=True | Benchmarking AI Agents for Hardware Design Automation via MCP Tool Calling [alre | 2608.26199 | 2026-08-25
+     Already cited; its findings ('comprehensive tool descriptions consistently reduce failures, few-shot prompting can cause severe inaction') match the direction of C2, so present our 61.4 to 88.4 and +0.5/+1.0 results as consistent with, and sharper than, this w
+[medium] exists=True cite=True | Tool Documentation Enables Zero-Shot Tool-Usage with Large Language Models | 2308.00675 | 2023-08-01
+     The canonical 'documentation beats demonstrations' result (zero-shot documentation outperforms few-shot without documentation), which pre-empts C2(a)/(b) as a phenomenon, so present our names-to-catalog +27 pt and +0.5/+1.0 retrieval results as a closed-catalo
+[medium] exists=True cite=True | From SQL Generation to Tool Selection: A Domain-Oriented Pattern for MCP Servers | 2608.22063 | 2026-08-22
+     Concurrent cross-domain statement of our thesis: replace query-time SQL synthesis with selection among parameterized domain tools ('Model Demotion': intent classification lowers the model tier needed; 3B goes from 0.583 to 0.929), which closely parallels 'rout
+[low] exists=True cite=False | When Tools Look Alike: Evaluating Semantic Confusion in LLM Tool Selection (Vidh | https://neurips.cc/virtual/2026/158000 | 2026-12 (NeurIPS 2026 poster)
+     Confirmed WiML affinity poster: accuracy drops as distractors become semantically similar, and it tests contrastive 'boundary' descriptions, which matches our disambiguation notes; it is single-author with no arXiv/OpenReview paper, so it is optional to cite a
+[low] exists=True cite=False | netpilot: LLM-Assisted Netlist Exploration and Transformation (double-blind arti | https://doi.org/10.5281/zenodo.21276594 | 2026-07-09
+     Another contest team's anonymized alpha-round code bundle ('regex Verilog parser + agent + tool dispatch + 5-stage formal equivalence shield') with no paper, claims or analysis; it only shows that dispatch plus an equivalence gate is a natural contest design, 
+[low] exists=False cite=False | EDA Logic Synthesis Engine / LLM agent EDA exploration blog (ynl.it.com) | https://ynl.it.com/blog/llm-agent-eda-exploration | unknown
+     UNVERIFIED: the host refused HTTPS connections and HTTP timed out on 2026-11-09, so none of the claimed content (random-simulation check, 44% figure, 3-5 retries) could be confirmed; at best it is a non-archival blog that is unsafe to cite.
+[low] exists=True cite=False | An LLM-Orchestrated Neuro-Symbolic Framework for Verifying Diagnostic Signal Rea | 2611.07040 | 2026-11-04
+     An LLM that orchestrates and resolves device roles, with deterministic graph engines verifying board-level reachability over a netlist, sound by construction; it is read-only board/system analysis with no gate-level edits, commits or routing study.
+[low] exists=True cite=False | Can Agents Secure Hardware? Evaluating Agentic LLM-Driven Obfuscation for IP Pro | 2604.13298 | 2026-04-14
+     A structured lock-plan, deterministic netlist compilation and equivalence/SAT evaluation on ISCAS-85; it is a single-shot obfuscation pipeline with no persistent multi-request state, closed catalog or commit/rollback.
+[low] exists=True cite=False | SynAct: A Reasoning-Acting Large Language Model Agent for Adaptive Synthesis Opt | 2608.12751 | 2026-08-13
+     A ReAct-style agent that issues commercial-synthesis commands from the live circuit state for WNS/PPA; it has no NL request stream, equivalence-gated commit or closed intent catalog, so it is at most optimization-side related work.
+[low] exists=True cite=True | Towards LLM-Based Reasoning for Gate-Level Netlist Tasks (Mueen Almasre, Lilas A | IEEE VTS 2026 (Semantic Scholar record; not on arXiv) | 2026-04-27
+     The Semantic Scholar record confirms it is an LLM-reasoning-on-gate-level-netlists paper (the full abstract was unavailable because the search budget was exhausted), which is the 'reasoning' alternative we argue against; it is a same-domain citation for motiva
+[low] exists=True cite=False | TOPCELL: Topology Optimization of Standard Cell via LLMs (DAC 2026) | 2604.14237 | 2026-04-15
+     The candidate note is inaccurate: TOPCELL fine-tunes an LLM with GRPO to generate transistor topologies; it is not a 'pick, then deterministic engine executes, equivalent by construction' decoupling, so it has little bearing on C1.
+[low] exists=True cite=False | EDATracer: An Agentic Framework for Large-Scale EDA Artifact Analysis | 2608.04032 | 2026-08-02
+     Read-only, retrieval-based (KG plus vector index) QA over EDA artifacts with a 90-question benchmark; it has no transformations, closed catalog or equivalence checking.
+[low] exists=True cite=True | ChipXplore: Natural Language Exploration of Hardware Designs and Libraries | 2407.12749 | 2024-07-17 (v3 2025-06-29)
+     The canonical prior 'NL exploration of hardware designs' work (text-to-SQL/Cypher, read-only), where the LLM writes open queries; it is the natural contrast for our closed-catalog routing and our 'exploration' setting.
+[low] exists=True cite=True | NetlistBench: Evaluating LLM Reliability in SPICE Netlist Recognition and Manipu | 2608.12197 | 2026-08-12
+     Already cited; it gives motivation that LLMs degrade on structural netlist edits and long edit horizons (SPICE only).
+[low] exists=False cite=False | Using LLM Agents to Explore EDA Synthesis Search Spaces (ynl.it.com blog) [DUPLI | https://ynl.it.com/blog/llm-agent-eda-exploration | unknown
+     UNVERIFIED: the site was unreachable (ECONNREFUSED/timeout); same URL as the earlier blog entry.
+[low] exists=True cite=False | WaveletECO: A Closed-Loop Physical ECO Platform and a Specialized Local Language | 2609.23444 | 2026-09-20
+     A closed-loop physical ECO platform with an SFT/CPO-SimPO-trained 9B model making multi-round timing repairs; its gate is timing/QoR, not functional equivalence, and it has no NL request stream.
+[low] exists=True cite=False | Autonomous Evolution of EDA Tools: Multi-Agent Self-Evolved ABC (Cunxi Yu, Haoxi | 2604.15082 | 2026-04-16
+     The full text confirms an ABC CEC gate after every LLM code edit, with sequential designs checked by single-frame (BMC depth 1) combinational equivalence, similar in spirit to our register cut; it is offline evolution of tool source code, not routing NL reques
+[low] exists=True cite=False | MappingEvolve: LLM-Driven Code Evolution for Technology Mapping | 2604.26591 | 2026-04-29
+     Planner/Evolver/Evaluator LLM evolution of technology-mapping code; the abstract does not mention CEC (the candidate's 'CEC in reward' is unverified), and it is offline code evolution unrelated to the NL netlist agent.
+[low] exists=True cite=True | FluxEDA: A Unified Execution Infrastructure for Stateful Agentic EDA [already ci | 2603.25243 | 2026-03-26
+     Already cited; its abstract confirms a stateful gateway with state reuse and rollback, and does not mention a verification gate, so state 'rollback without a fail-closed formal gate' in related work.
+[low] exists=True cite=False | SABLE: An NDA-Safe Closed-Loop LLM Framework for Analog Circuit Optimization in  | 2607.03701 | 2026-07-04
+     A whitelist of 28 scoped SKILL entry points plus a strict JSON action contract for analog sizing in Virtuoso; it is a closed interface for confidentiality, with no functional-equivalence gate.
+[low] exists=True cite=False | Natural Language Interface for Firewall Configuration | 2512.10789 | 2025-12-11
+     LLM as 'assistive parser' to a typed IR, deterministic compilation, linter/safety-gate/Batfish checks; it is a cross-domain analog with no equivalence proof or persistent mutated state.
+[low] exists=True cite=False | CogEEGAgent: Toward Autonomous Cognitive EEG Analysis with Grounded Execution an | 2607.25045 | 2026-07-27
+     The LLM proposes registered analyses, deterministic typed-contract validation and fail-closed release, plus a routing benchmark against a deterministic router; it is read-only scientific analysis with no mutation/commit gate; an optional cross-domain cite.
+[low] exists=True cite=False | A Methodology for Selecting and Composing Runtime Architecture Patterns for Prod | 2605.20173 | 2026-05-19 (v2 2026-08-11)
+     Names the generic proposer/verifier/commit/reject contract (the 'SDB'), which shows the pattern is general practice, so C1's novelty should rest on the EDA instantiation (sound register-cut CEC, grounding, proposition), not the pattern.
+[low] exists=True cite=False | Cordon: Semantic Transactions for Tool-Using LLM Agents | 2606.17573 | 2026-06-16
+     A generic transactional runtime: shadow-state mutations, effect outbox, validate-before-commit; prior art for snapshot/commit/rollback in general, but its checks are policy/flow checks, not functional-equivalence proofs.
+[low] exists=True cite=False | Don't Let the Model Write the YAML: Deterministic, Minimal-Diff GitOps Remediati | 2609.00227 | 2026-08-31
+     A strong supporting analog: model-written diffs or files silently corrupt state, so the agent emits only a structured field-change intent applied by a deterministic 'fail-closed application contract', explicitly scoped to faithful application rather than wheth
+[low] exists=True cite=False | Less Is More: Measuring How LLM Involvement affects Chatbot Accuracy in Static A | 2604.21746 | 2026-04-23
+     Supports 'Routing, Not Reasoning': schema-constrained JSON IR plus deterministic query construction beats direct CPGQL generation by 15-25 pp and beats agentic generation at 8x fewer tokens; different domain, small benchmark (20 tasks).
+[low] exists=True cite=False | When JSON Is Not Enough: Semantic Reliability of Schema-Constrained LLM Ordering | 2607.18261 | 2026-05-16 (arXiv API v1 date; ID prefix 2607)
+     Shows 100% schema-valid output with only about 80% semantic success; useful motivation that validity is not conformance (drift), in restaurant ordering.
+[low] exists=True cite=False | LEANGUARD: Lean-Verified Guardrails for Tool-Using Agents | 2611.02332 | 2026-11-02
+     Fail-closed, Lean4-proved pre-execution policy checking of tool calls on tau-bench; it checks policy compliance of calls, not functional equivalence of artifact transformations.
+[low] exists=True cite=False | Symbolic Temporal Supervision of LLM Agents Using Contracts (ContrAgent; Yifeng  | 2609.18128 | 2026-09-16
+     LTLf assume-guarantee contracts compiled to DFAs that gate tool calls deterministically; it is temporal safety policy, not equivalence, though Nuzzo is known in EDA/formal circles.
+[low] exists=True cite=False | GoEX: Perspectives and Designs Towards a Runtime for Autonomous LLM Applications | 2404.06921 | 2024-04-10
+     Early undo/damage-confinement runtime for LLM actions ('post-facto validation'); recommended alongside our existing Gorilla cite for snapshot/rollback lineage, with no formal gate.
+[low] exists=True cite=False | Large Language Models for Structured Clinical Data Analysis: Dual-Agent Groundin | 2609.34039 | 2026-09-28
+     Accept / one bounded repair / abstain policy ('fail closed') in NL-to-SQL, mirroring our one-retry-then-no-op, but the LLM writes SQL and a second LLM validates.
+[low] exists=True cite=False | IaC-Guard-V: A Verification Framework for LLM-Generated Infrastructure-as-Code R | 2609.28488 | 2026-08-12 (arXiv API v1 date; ID prefix 2609)
+     An evaluation framework that separates target-issue resolution from regression safety for LLM IaC repairs, a loose analog of our conformance-vs-equivalence split; not a commit gate.
+[low] exists=True cite=False | Evaluating LLM-driven User-Intent Formalization for Verification-Aware Languages | 2406.09757 | 2024-06-14 (v2 2024-10-15)
+     States that a mechanical check cannot establish that informal NL intent was formalized correctly; a good conceptual anchor for our functional-guarantee vs request-conformance (drift) split, at an FMCAD venue close to DAC.
+[low] exists=True cite=False | VeriSafe Agent: Safeguarding Mobile GUI Agent via Logic-based Action Verificatio | 2503.18492 | 2025-03-24 (v2 2025-09-11)
+     Autoformalizes NL intent and verifies actions against it, the opposite design choice to ours (we verify functional preservation and measure drift); cite only if positioning 'why not verify intent?'.
+[low] exists=True cite=False | From Intents to Algorithms: Verified Algorithm Discovery for Transport Networks  | 2609.27386 | 2026-09-23
+     An untrusted LLM in a typed sandbox, a trusted allocator, and feasibility preservation proved under explicit assumptions (an analog of A1-A4), in intent-based networking; the live-LLM study is not even completed.
+[low] exists=True cite=False | Graph-Symbolic Policy Enforcement and Control (G-SPEC): A Neuro-Symbolic Framewo | 2512.20275 | 2025-12-23
+     LLM planning constrained by knowledge-graph and SHACL validation in 5G; it has policy validation, no equivalence proof and no closed operation catalog.
+[low] exists=True cite=False | What do LLMs need to Synthesize Correct Router Configurations? (Verified Prompt  | 2307.04945 | 2023-07-11
+     GPT-4 writes router configs and verifiers give localized feedback; foundational generate-then-verify, and it is exactly the LLM-writes-the-artifact design we avoid.
+[low] exists=True cite=False | Verified Learning for Compiler Optimization: An LLM-Guided Architecture with For | 2609.27214 | 2026-09-23
+     Alive2-gated LLM-generated LLVM rewrites with regeneration on failure; an equivalence-gated commit analog, but the LLM generates the transformation (related earlier work: LLM-Vectorizer 2406.04693, confirmed, Alive2-verified).
+[low] exists=True cite=False | MetaTool Benchmark for Large Language Models: Deciding Whether to Use Tools and  | 2310.03128 | 2023-10-04 (v6 2024-12-04)
+     Includes a 'tool selection with similar choices' subtask and recommends description rewriting; background for C2(c), recommended but not essential.
+[low] exists=True cite=False | Exploring the Use of Natural Language Descriptions of Intents for Large Language | https://aclanthology.org/2024.sigdial-1.39 | 2024-09
+     Correction: it studies the quality and diversity of intent descriptions for a fine-tuned FLAN-T5 3B (test-time description quality matters most), not a clean names-vs-descriptions ablation with frozen API models; optional.
+[low] exists=True cite=False | From Fixed Keys to Readable Schemas: Small Language Models for Vehicle Agent Fun | 2609.09476 | 2026-09-08 (v2 2026-10-04)
+     79 vehicle functions (close to our ~80): it compares fine-tuned functional tokens with schema-in-prompt on 270M-1.7B SLMs; it involves fine-tuning, a non-archival venue, and no verification gate.
+[low] exists=True cite=False | HumanMCP: A Human-Like Query Dataset for Evaluating MCP Tool Retrieval Performan | 2602.23367 | 2025-12-18 (arXiv API v1 date; ID prefix 2602)
+     A 4-page dataset paper (2,800 tools / 308 servers); the evaluation uses GPT-4o-mini, Claude 3.5 Haiku (not 4.5) and Gemini 2.0 Flash with 10/50/100 tools and random distractors, so our near-synonym catalog is the harder case.
+[low] exists=True cite=True | Intent Detection in the Age of LLMs (EMNLP 2024 Industry) | 2410.01627 | 2024-10-02
+     Compares adaptive-ICL LLMs against SetFit sentence-transformer classifiers and uses retrieval of examples, which is the prior baseline framing for our SVM/SBERT-kNN at or below 73.3% vs LLM routing; cite so the supervised comparison is not seen as new.
+[low] exists=True cite=True | In-Context Learning for Text Classification with Many Labels | 2309.10954 | 2023-09-19 (v2 2023-12-06)
+     Establishes dense retrieval of labeled examples for many-label intent ICL, with ablations on example similarity and label-name semantics; our contribution is only that retrieval adds about 1 pt when the full described catalog is present, so cite it as the meth
+[low] exists=True cite=False | TinyAgent: Function Calling at the Edge (EMNLP 2024 Demo) | 2409.00608 | 2024-09-01 (v3 2024-10-25)
+     The full text confirms RAG-selected in-context examples plus tool retrieval for fine-tuned SLMs over a fixed tool set, with no isolated example-retrieval ablation; optional.
+[low] exists=True cite=False | Efficient and Scalable Estimation of Tool Representations in Vector Space (Tool2 | 2409.02141 | 2024-09-02
+     Usage-driven (example-query) tool embeddings for tool retrieval; tangential, because our catalog always fits in the prompt and only examples are retrieved.
+[low] exists=True cite=True | Disambiguation-Centric Finetuning Makes Enterprise Tool-Calling LLMs More Realis | 2507.03336 | 2025-07-04 (v4 2026-04-11)
+     Identifies 'near-duplicate tools vying for the same user intent' as a main failure of prompted frontier models, which is exactly our residual-error finding, so cite it to frame C2(c) as consistent; it fixes this by fine-tuning, whereas we use frozen models and
+[low] exists=True cite=False | ToolScope: Enhancing LLM Agent Tool Use through Tool Merging and Context-Aware F | 2510.20036 | 2025-10-22 (v2 2026-05-08)
+     Redundant or overlapping tools reduce selection accuracy, fixed by merging and filtering; background for C2(c).
+[low] exists=True cite=False | Tool Preferences in Agentic LLMs are Unreliable (EMNLP 2025 main) | 2505.18135 | 2025-05-23 (v2 2025-09-21)
+     Description edits shift tool usage more than 10x, evidence that description text drives selection (supports C2(a)); BiasBusters 2510.00307 (ICLR 2026, confirmed) similarly finds query-metadata alignment is the strongest driver.
+[low] exists=True cite=False | Model Context Protocol (MCP) Tool Descriptions Are Smelly! Towards Improving AI  | 2602.14878 | 2026-02-16 (v3 2026-05-31)
+     Augmenting descriptions gives a median +5.85 pp task success across 856 MCP tools; useful contrast with our +27 pt names-to-catalog jump, optional.
+[low] exists=True cite=False | Learning to Rewrite Tool Descriptions for Reliable LLM-Agent Tool Use (Trace-Fre | 2602.20426 | 2026-02-23 (v2 2026-04-29)
+     Learned description rewriting improves robustness as catalogs grow to 150+ tools; tangential to our hand-written closed catalog.
+[low] exists=True cite=False | Semantic Routing Framework for Multi-Domain Telecom Intent-Based Networking | 2610.24487 | 2026-10-17
+     Fine-tuned contrastive sentence encoders reach 99.0/94.6% on 5 routes/22 branches with a 1,100-intent codebook, beating a cloud LLM, which is a possible reviewer counterpoint to our 'supervised at or below 73.3%'; explain that our label space (~80 near-synonym
+[low] exists=True cite=False | RTLRewriter: Methodologies for Large Models aided RTL Code Optimization (ICCAD 2 | 2409.11414 | 2024-09-04
+     The LLM rewrites RTL directly with a fast verification pipeline; prior art that keeps LLM circuit changes only if verified, but with no closed catalog, persistent multi-request state or guarantee.
+[low] exists=True cite=False | SymRTLO: Enhancing RTL Code Optimization with LLMs and Neuron-Inspired Symbolic  | 2504.10369 | 2025-04-14 (v2 2025-09-22)
+     LLM RTL rewriting with rule RAG, AST templates and formal-equivalence plus test validation; the LLM generates code, and there is no transactional commit over a persistent state.
+[low] exists=True cite=False | ASPEN: LLM-Guided E-Graph Rewriting for RTL Datapath Optimization (Zhang, Deng,  | https://www.csl.cornell.edu/~zhiruz/pdfs/aspen-mlcad2025.pdf | 2025-09
+     An LLM agent proposes and selects e-graph rewrite rules, so equivalence is preserved by the rewrite system; a contrast between correct-by-construction rules and our post-hoc CEC gate, not NL-request driven.
+[low] exists=True cite=False | FormalRTL: Verified RTL Synthesis at Scale | 2603.08738 | 2026-02-25 (arXiv API v1 date; ID prefix 2603)
+     Multi-agent spec-to-RTL generation with formal equivalence against software reference models; generation and repair, not gated edits of an existing netlist.
+[low] exists=True cite=False | Circuit Transformer: A Transformer That Preserves Logical Equivalence (ICLR 2025 | 2403.13838 | 2024-03-14 (v2 2025-02-02)
+     Equivalence-preserving decoding for generated circuits (by construction); a different mechanism for functional preservation, useful only in positioning.
+[low] exists=True cite=False | IC3-Evolve: Proof-/Witness-Gated Offline LLM-Driven Heuristic Evolution for IC3  | 2604.03232 | 2026-01-18 (arXiv API v1 date; ID prefix 2604)
+     Admits LLM patches to an IC3 checker only with independently checked certificates (a fail-closed principle), applied offline to verifier code, not to circuits or NL requests.
+[low] exists=False cite=False | Beyond Equivalence: Task-Level Verification Unlocks Architectural Optimizations  | https://openreview.net/forum?id=klFeWOuxYP | unknown (claimed 2026-05)
+     UNVERIFIED: OpenReview forum, PDF and API all returned a bot-challenge page, and arXiv has no matching title. Before relying on it, confirm that it is not the same work as the concurrent 'Beyond Equivalence: Checking Task Completion...' we already cite, so the
+[low] exists=False cite=False | Blog: LLM agent EDA exploration (ynl.it.com) [DUPLICATE] | https://ynl.it.com/blog/llm-agent-eda-exploration | unknown
+     UNVERIFIED: same unreachable URL as the earlier blog entries; do not cite.
