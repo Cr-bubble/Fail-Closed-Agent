@@ -9,6 +9,9 @@
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\newtheorem{proposition}{Proposition}
 
 \begin{document}
 
@@ -55,6 +58,20 @@ Organizations that treat designs as confidential IP may prefer small, locally
 deployable models~\cite{chipnemo}; benchmarks such as the ICCAD 2026 CAD
 Contest Problem A~\cite{problema} mandate frozen mini-class models; and few
 teams maintain a fine-tuning pipeline.
+
+\begin{figure*}[t]
+\centering
+\input{figs/fig_arch_tikz.tex}
+\caption{The fail-closed agent. (a)~Intent routing (Section~\ref{sec:routing}):
+the LLM only translates; schema validation and name grounding send an invalid
+intent back for one corrective retry, and a request that is still invalid ends
+in a safe no-op. (b)~Guarded execution (Section~\ref{sec:commit}): a mutation
+runs on a snapshot that is committed only if the guards pass; otherwise the
+snapshot is discarded and the netlist is unchanged. Name grounding, analysis,
+and transformation read the persistent netlist state (dashed gray); only
+commits write it. Dashed red: failure paths.}
+\label{fig:arch}
+\end{figure*}
 
 When the LLM itself generates the executable artifact---a tool script, an
 edited netlist, or RTL code---its errors have a direct path into the design.
@@ -140,17 +157,6 @@ parameter grounding, and a measured account of what the combination prevents.
 \section{Fail-Closed Agent Design}
 \label{sec:design}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figs/fig_arch_v2.png}
-\caption{The fail-closed agent. (a)~Routing (Section~\ref{sec:routing}): the
-LLM only translates; schema validation and name grounding against the live
-netlist return a rejection reason for one corrective retry (dashed red), and
-every failure exit ends in a safe no-op (dashed gray). (b)~Commit protocol
-(Section~\ref{sec:commit}): mutations run on a snapshot that is committed only
-if all checks pass; otherwise it is rolled back.}
-\label{fig:arch}
-\end{figure*}
 
 \subsection{Closed-World Intent Interface}
 \label{sec:interface}
@@ -227,7 +233,10 @@ We distinguish three properties of a committed edit: \emph{functional
 integrity} (the netlist computes the same function), \emph{structural
 validity} (it meets the bounds and basis of the routed operation), and
 \emph{request conformance} (the routed operation is what the user asked for).
-The architecture targets the first two, under three assumptions:
+Every mutation intent in the catalog is function-preserving by specification;
+a request that would change function (e.g., inserting a gating cell) has no
+catalog operation and cannot be executed as requested. The architecture targets
+the first two properties, under four assumptions:
 \begin{itemize}
 \item \textbf{(A1) Complete mediation.} Every operation that mutates the
   netlist, including renaming, executes through the commit protocol.
@@ -235,10 +244,26 @@ The architecture targets the first two, under three assumptions:
   checker is correct for the projected circuits.
 \item \textbf{(A3) Faithful projection.} The register-cut model matches the
   flip-flop semantics of the netlist.
+\item \textbf{(A4) Correct structural checks.} The bound and basis checks accept
+  a netlist only if it meets the bounds and basis carried by the operation.
 \end{itemize}
-Under A1--A3, every committed netlist is functionally equivalent to its
-predecessor and structurally valid for the routed operation. Request
-conformance is not guaranteed: a mis-routed request can commit an equivalent
+
+\begin{proposition}
+Under A1--A4, every netlist the agent commits is functionally equivalent to the
+netlist it replaces, and hence to the most recently loaded design, and meets
+the bounds and basis of the routed operation. An inconclusive check never
+produces a commit.
+\end{proposition}
+\begin{IEEEproof}[Proof sketch]
+By A1, the current netlist changes only when a snapshot is committed, and a
+commit requires a proof of equivalence of the register-cut projections and
+passing structural checks. By A2 the proof is correct for the projections, by
+A3 projection equivalence implies sequential equivalence, and by A4 the
+structural checks are correct. Equivalence is transitive, so induction over the
+sequence of commits extends it to the loaded design. A disproof, a timeout, or
+an inconclusive result restores the snapshot by the acceptance rule.
+\end{IEEEproof}
+The proposition says nothing about request conformance: a mis-routed request can commit an equivalent
 but unwanted edit, and because the design persists, that edit changes what
 later requests observe---for example, a gate count or a net name that a later
 question depends on. The guards also enforce only the requirements carried by
@@ -271,36 +296,45 @@ accuracies on it may be optimistic.
 selected operation is correct. We use the two contest-mandated models,
 gpt-4o-mini and claude-haiku-4.5, at temperature 0.2, and repeat the
 gpt-4o-mini headline settings five times ($N{=}5$). Evaluation rounds run
-strictly one at a time, and a round with any degraded API call is discarded:
-we once observed rate limiting silently convert LLM calls into no-op
-responses and depress a measured accuracy from 97.8\% to 67.2\%.
+strictly one at a time, and any round with a degraded API call is discarded,
+because rate limiting can silently turn LLM calls into no-op responses.
 
 \subsection{Routing Accuracy}
 \label{sec:routing-acc}
 
 \begin{table}[t]
-\caption{Intent accuracy on the 1,420-request stress set. Ranges span $N$
-runs. $^\dagger$Upper bound: the bank shares the stress set's distribution.}
+\caption{Intent routing accuracy on the 1,420-request stress set (means over
+$N$ runs). Exact obj.: intent and all parameters correct. Bank: source of the
+BM25-retrieved examples ($k{=}50$).}
 \label{tab:routing}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}Xlrc@{}}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}Xrrc@{}}
 \toprule
-Router & Labeled data & Intent acc. & $N$ \\
+Method & Configuration & Intent & Exact obj. & $N$ \\
 \midrule
-BM25 nearest neighbor & production bank & 47.4\% & -- \\
-SBERT embedding + kNN & all labels (LOCO) & 72.8\% & -- \\
-TF-IDF + linear SVM & all labels (LOCO) & 73.3\% & -- \\
+\multicolumn{5}{@{}l}{\emph{Non-LLM baselines}} \\
+BM25 NN & production bank & 47.4\% & -- & -- \\
+SBERT + kNN & all labels, LOCO & 72.8\% & -- & -- \\
+TF-IDF + SVM & all labels, LOCO & 73.3\% & -- & -- \\
 \midrule
-gpt-4o-mini, bare intent list & -- & 61.4\% & 1 \\
-claude-haiku-4.5, bare intent list & -- & 78.7\% & 1 \\
-gpt-4o-mini, full catalog & -- & 88.4\% (88.3--88.7) & 5 \\
-gpt-4o-mini, catalog + retrieval & production bank & 88.9\% (88.6--89.2) & 5 \\
-gpt-4o-mini, catalog + retrieval$^\dagger$ & high-recall (LOCO) & 95.1 / 95.6\% & 2 \\
-claude-haiku-4.5, catalog + retrieval & production bank & 97.4\% & 1 \\
+\multicolumn{5}{@{}l}{\emph{LLM-based routing}} \\
+gpt-4o-mini & bare intent list & 61.4\% & 55.4\% & 3 \\
+claude-haiku-4.5 & bare intent list & 78.7\% & 72.3\% & 1 \\
+gpt-4o-mini & full catalog & 88.4\% & 79.5\% & 5 \\
+claude-haiku-4.5 & full catalog & 96.4\% & 91.4\% & 3 \\
+gpt-4o-mini & catalog + production bank & 88.9\% & 82.0\% & 5 \\
+gpt-4o-mini & catalog + high-recall bank$^\dagger$ & 95.4\% & 91.6\% & 2 \\
+claude-haiku-4.5 & catalog + production bank & 97.4\% & 92.7\% & 1 \\
 \bottomrule
 \end{tabularx}
+
+\vspace{2pt}
+\parbox{\columnwidth}{\footnotesize Min--max over runs: gpt-4o-mini bare 61.1--61.8,
+full catalog 88.3--88.7, production bank 88.6--89.2, high-recall bank
+95.1--95.6; claude-haiku-4.5 full catalog 96.3--96.5. $^\dagger$Upper bound: the bank
+shares the stress set's distribution. LOCO: leave-one-testcase-out.}
 \end{table}
 
 \textbf{Catalog information is the largest lever.} A bare list of intent names
@@ -308,8 +342,8 @@ yields 61.4\% with gpt-4o-mini; the full catalog---descriptions, parameter
 schemas, and disambiguation entries together---raises it to 88.4\% (+27.0
 points). The bare condition keeps the schema-feedback retry, whose fixed
 message mentions class-level depth intents, and contains no other catalog
-text. The gap between the two models is 17.3 points with the bare list and 8.5
-points with the full pipeline, so the catalog helps the weaker model more.
+text. The gap between the two models is 17.3 points with the bare list but 8.0
+points with the full catalog, so the catalog helps the weaker model more.
 
 \textbf{Supervised baselines underperform.} With every labeled request
 available, the best classifier reaches 73.3\% (TF-IDF features with a linear
@@ -321,15 +355,17 @@ attempt. With only the production bank, three operations have no examples and
 are unreachable for nearest-neighbor routing, whereas the LLM reaches them
 through the catalog.
 
-\textbf{Retrieval value depends on the bank and the model.} With the
-production bank, retrieval ($k{=}50$) adds only 0.5 points for gpt-4o-mini,
-and retrieval depth barely matters: $k$ from 5 to 100 spans 88.1--89.4\%
-without a monotone trend, while label recall rises from 60\% to 86\%. The
-high-recall bank adds 6.4 points (an upper bound), and claude-haiku-4.5
-reaches 97.4\% on the production bank, whose label recall at $k{=}50$ is only
-82.1\%. A stronger model thus needs less help from retrieval; for the weaker
-model, bank quality matters, and its effect (+6.4 points) is comparable to
-switching models (+8.5 points at a fixed configuration).
+\textbf{Retrieval adds little with the production bank.} Retrieving $k{=}50$
+examples from the production bank adds 0.5 points for gpt-4o-mini and 1.0
+point for claude-haiku-4.5 over the catalog alone, and retrieval depth barely
+matters: for gpt-4o-mini, $k$ from 5 to 100 spans 88.1--89.4\% without a
+monotone trend, while label recall rises from 60\% to 86\%. The catalog thus
+carries most of the routing accuracy: claude-haiku-4.5 reaches 96.4\% with no
+retrieval at all, even though the production bank's label recall at $k{=}50$
+is only 82.1\%. Retrieval pays off only when the examples closely match the
+requests: the high-recall bank adds 6.4 points for gpt-4o-mini, an upper bound
+because it shares the stress set's distribution, and an effect comparable to
+switching models (+8.0 points with the catalog alone).
 
 \subsection{Failure Analysis}
 \label{sec:failures}
@@ -350,36 +386,45 @@ discrimination is a major source of residual routing errors.
 \label{sec:fault}
 
 \begin{table}[t]
-\caption{Fault-injection outcomes (24 injections; classes are mutually
-exclusive).}
+\caption{Fault-injection outcomes. Routing faults corrupt the router's output
+at dispatch; engine faults corrupt a transformation inside the engine. Classes
+are mutually exclusive.}
 \label{tab:fault}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}Xcc@{}}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}Xccc@{}}
 \toprule
-Outcome & Meaning & Before fix & After fix \\
+ & & \multicolumn{2}{c}{Routing (21)} & Engine (3) \\
+\cmidrule(lr){3-4}\cmidrule(l){5-5}
+Outcome & Meaning & before fix & after fix & \\
 \midrule
-Rejected & refused before execution (closed-world value or name collision) & 2 & 5 \\
-Rolled back & equivalence disproved; snapshot restored & 3 & 3 \\
-Benign & corrupted edit still met every hard requirement of the request & 9 & 9 \\
-Drift & equivalent and valid for the routed operation, but non-conforming & 7 & 7 \\
-Unsafe & non-equivalent netlist committed & 3 & 0 \\
+Rejected & refused before execution & 2 & 5 & 0 \\
+Rolled back & equivalence disproved & 0 & 0 & 3 \\
+Benign & met every hard requirement & 9 & 9 & 0 \\
+Drift & equivalent but non-conforming & 7 & 7 & 0 \\
+Unsafe & non-equivalent netlist committed & 3 & 0 & 0 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-To test A1 and the guards, we corrupt routing output at the dispatch layer,
-simulating worst-case LLM behavior: numeric bounds off by one in either
-direction, a wrong but implemented basis or transformation, a basis outside
-the closed world, a target redirected to a different existing net, a swap to
-a different intent, and a function-changing rewire injected inside the
-engine. We run 24 injections over six transformation-heavy public testcases
-(the six uncorrupted runs pass all checks) and classify each final netlist
-against the hard requirements of the original request
-(Table~\ref{tab:fault}).
+To test A1 and the guards, we use two fault models. \emph{Routing faults}
+corrupt the router's output at the dispatch layer, simulating worst-case LLM
+behavior: numeric bounds off by one in either direction, a wrong but
+implemented basis or transformation, a basis outside the closed world, a
+target redirected to a different existing net, and a swap to a different
+intent. \emph{Engine faults} instead inject a function-changing rewire inside
+a transformation, standing in for an implementation bug. We run 24 injections
+(21 routing, 3 engine) over six transformation-heavy public testcases (the six
+uncorrupted runs pass all checks) and classify each final netlist against the
+hard requirements of the original request (Table~\ref{tab:fault}).
 
-Only rejections and rollbacks are detections; the nine benign cases passed
+The two fault models are stopped by different mechanisms. Every rollback came
+from an engine fault: the equivalence check caught all three function-changing
+rewires. No routing fault produced a function-changing edit through the commit
+protocol, because every catalog operation preserves function; routing faults
+were either refused by the closed world or yielded an equivalent netlist. Only
+rejections and rollbacks are detections; the nine benign cases passed
 because the corrupted edit happened to remain acceptable. The three unsafe
 commits shared one cause, a violation of A1: renaming was treated as cosmetic
 and bypassed the commit protocol, so renaming a net onto an existing name
@@ -392,7 +437,12 @@ hard-requirement checks. The seven drift cases mark the conformance boundary
 of Section~\ref{sec:scope}: the guards enforced the corrupted operation's
 contract rather than the user's sentence, and the response claimed success.
 Detecting them requires request-level completion checks such as those
-of~\cite{companion}.
+of~\cite{companion}. Because the design persists, a single corrupted request
+also changes later answers: in 13 of the 24 runs, at least one later response
+differs from the uncorrupted run (27 of 173 later responses). This happens even
+when the guards act, since a refused or rolled-back request leaves the design
+in a state the user did not intend; the later answers are then correct for the
+actual design, whereas after drift the agent had reported success.
 
 \subsection{Official Evaluation and Post-Contest Analysis}
 \label{sec:official}
@@ -405,30 +455,36 @@ cost among all entries. Table~\ref{tab:official} compares the official result
 with two post-contest re-evaluations of the same 46 optimization requests.
 
 \begin{table}[t]
-\caption{Optimization score on the 46 final-round optimization requests.}
+\caption{Optimization performance on the 46 final-round optimization requests.
+Normalized score: mean request score $\times$ 100\%.}
 \label{tab:official}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \begin{tabularx}{\columnwidth}{@{}lc>{\raggedright\arraybackslash}X@{}}
 \toprule
-Run & Score (/46) & Compute \\
+Configuration & Normalized score & Compute \\
 \midrule
-Official evaluation & 43.366 & 1 run, 300\,s per request \\
-Re-run, same configuration & 43.514 & 1 run, 300\,s per request \\
-Best of up to four runs & 43.983 & up to 4 runs, incl.\ an earlier engine version \\
+Official evaluation & 94.27\% & $1\times$ (300\,s per request) \\
+Re-run, same configuration & 94.60\% & $1\times$ \\
+Best of up to four runs$^\dagger$ & 95.62\% & up to $4\times$ \\
 \bottomrule
 \end{tabularx}
+
+\vspace{2pt}
+\parbox{\columnwidth}{\footnotesize $^\dagger$Post-contest upper bound;
+includes an earlier engine version.}
 \end{table}
 
 A single re-run under the same per-request budget improves 15 requests and
-worsens 4, for a net gain of 0.148: the optimizer's search is budget-bound and
+worsens 4, for a net gain of 0.32 percentage points: the optimizer's search is budget-bound and
 stochastic, and one run is far from its best achievable result. Taking the
-best of up to four runs, at up to four times the compute, adds 0.617; all 17
+best of up to four runs, at up to four times the compute, adds 1.34
+percentage points; all 17
 improved netlists were re-verified independently with ABC, and four of them
 beat the best cost among all contest entries. These figures are post-contest
 upper bounds, not a comparison under the official protocol. Three requests
-resist re-sampling entirely (1.41 points) and call for algorithmic
+resist re-sampling entirely (3.1 percentage points) and call for algorithmic
 improvement.
 
 % ---------------------------------------------------------------------------
@@ -441,7 +497,7 @@ may be optimistic; the official final round provides an out-of-sample,
 end-to-end check. The cloud mini-class models stand in for the small, locally
 deployable models that motivate this work, and direct validation on
 open-weight models remains future work. Some settings were run once
-($N{=}1$). The functional guarantee rests on A1--A3 and on a correct
+($N{=}1$). The functional guarantee rests on A1--A4 and on a correct
 implementation of them, and drift---valid but non-conforming edits---is
 outside its scope.
 
@@ -461,6 +517,7 @@ language editing; all AI-assisted output was reviewed and revised by the
 authors, who take full responsibility for the content.
 
 % ---------------------------------------------------------------------------
+\clearpage
 \begin{thebibliography}{99}
 \bibitem{chateda} H.~Wu, Z.~He, X.~Zhang, X.~Yao, S.~Zheng, H.~Zheng, and B.~Yu, ``ChatEDA: A large language model powered autonomous agent for EDA,'' \emph{IEEE Trans. Comput.-Aided Design Integr. Circuits Syst.}, vol.~43, no.~10, pp.~3184--3197, 2024.
 \bibitem{rtlfixer} Y.~Tsai, M.~Liu, and H.~Ren, ``RTLFixer: Automatically fixing RTL syntax errors with large language models,'' in \emph{Proc. DAC}, 2024.

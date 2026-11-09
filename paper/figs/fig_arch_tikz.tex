@@ -1,0 +1,69 @@
+% Fig. 1 — fail-closed agent (vector, TikZ). Requires: tikz with
+% positioning, arrows.meta. Units in cm; total width about 16.2 cm.
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw=black!60, line width=0.5pt, rounded corners=2pt,
+              align=center, minimum height=0.86cm, inner sep=2.5pt},
+  llm/.style={box, fill=orange!14},
+  det/.style={box, fill=blue!7},
+  st/.style={box, fill=gray!13},
+  bad/.style={box, fill=red!9},
+  flow/.style={-{Stealth[length=4.2pt]}, line width=0.6pt, black!80},
+  fail/.style={-{Stealth[length=4.2pt]}, line width=0.6pt, red!70!black, dashed},
+  read/.style={-{Stealth[length=3.6pt]}, line width=0.5pt, black!45, densely dashed},
+  lab/.style={font=\scriptsize, text=black!75},
+  flab/.style={font=\scriptsize, text=red!70!black},
+]
+% ---------------- main row ----------------
+\node[llm, minimum width=2.3cm] (llm)    at (2.55,0)  {LLM intent router\\(frozen mini-class)};
+\node[det, minimum width=1.7cm] (schema) at (5.25,0)  {Schema\\validation};
+\node[det, minimum width=2.1cm] (ground) at (7.55,0)  {Name grounding\\(current netlist)};
+\node[det, minimum width=1.4cm] (disp)   at (9.85,0)  {Dispatch};
+\node[det, minimum width=1.9cm] (snap)   at (12.15,0) {Snapshot\\+ transform};
+\node[det, minimum width=2.0cm] (guard)  at (14.75,0) {Guards: CEC,\\bounds, basis};
+
+\draw[flow] (0.05,0) -- node[lab, above, pos=0.42] {NL request} (llm.west);
+\draw[flow] (llm) -- (schema);
+\draw[flow] (schema) -- (ground);
+\draw[flow] (ground) -- (disp);
+\draw[flow] (disp) -- (snap);
+\draw[flow] (snap) -- (guard);
+
+% ---------------- prompt context ----------------
+\node[st, minimum width=3.6cm] (ctx) at (2.55,1.55)
+  {Prompt context: complete catalog\\(always) + BM25 top-$k$ examples};
+\draw[flow] (ctx) -- (llm);
+
+% ---------------- single corrective-retry path ----------------
+\draw[fail] (schema.south) -- (5.25,-0.95);
+\draw[fail] (7.15,-0.43) -- (7.15,-0.95) -- (2.55,-0.95) -- (llm.south);
+\node[flab, anchor=north west] at (2.62,-1.0) {invalid $\rightarrow$ one corrective retry};
+\node[box, fill=gray!7, minimum width=2.2cm] (noop) at (6.6,-1.95)
+  {Safe no-op\\(design unchanged)};
+\draw[fail] (6.6,-0.95) -- node[flab, right] {still invalid} (noop.north);
+
+% ---------------- analysis branch ----------------
+\node[det, minimum width=1.7cm] (ana) at (9.85,-1.35) {Analysis\\(read-only)};
+\draw[flow] (disp) -- (ana);
+\draw[flow] (ana.east) -- node[lab, above] {reply} (11.6,-1.35);
+
+% ---------------- guarded commit ----------------
+\node[det, minimum width=1.7cm] (commit) at (14.75,-1.35) {Commit\\(delta ledger)};
+\draw[flow] (guard) -- node[lab, right] {PASS} (commit);
+\node[bad, minimum width=2.4cm] (rej) at (14.75,1.5)
+  {Reject: discard snapshot\\(netlist unchanged)};
+\draw[fail] (guard) -- node[flab, right] {FAIL} (rej);
+
+% ---------------- persistent state ----------------
+\node[st, minimum width=8.3cm, minimum height=0.6cm] (state) at (12.05,-2.5)
+  {Persistent netlist state};
+\draw[read] (8.15,-2.2) -- (8.15,-0.43);
+\draw[read] (state.north -| ana) -- (ana.south);
+\draw[read] (state.north -| snap) -- (snap.south);
+\draw[flow] (commit) -- node[lab, right] {write} (state.north -| commit);
+
+% ---------------- region titles ----------------
+\draw[black!25, dash pattern=on 2pt off 2pt] (8.85,2.45) -- (8.85,-1.95);
+\node[font=\small\bfseries, anchor=west] at (0.0,2.45) {(a) Intent routing};
+\node[font=\small\bfseries, anchor=west] at (9.05,2.45) {(b) Guarded execution};
+\end{tikzpicture}
