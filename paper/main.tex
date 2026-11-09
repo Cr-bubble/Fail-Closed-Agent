@@ -334,6 +334,32 @@ shares the stress set's distribution. Since the catalog's disambiguation
 entries were refined during the contest while inspecting errors on this set,
 accuracies on it may be optimistic.
 
+\textbf{Sessions.} Fault injection runs on the contest's public-release
+sessions and the official evaluation on its final round
+(Table~\ref{tab:testbed}). Final-round designs reach 180k gates and 33k
+flip-flops, and a session chains up to 15 requests on one persistent netlist.
+
+\begin{table}[t]
+\caption{Contest sessions used for fault injection (public release) and the
+official evaluation (final round). Request categories follow the requirement
+classifier of our evaluation harness.}
+\label{tab:testbed}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Public release & Final round \\
+\midrule
+Sessions / requests & 40 / 459 & 100 / 674 \\
+Analysis / edit / optimize & 390/57/12 & 590/38/46 \\
+Requests per session (med./max) & 9/20 & 7/15 \\
+Gates (min/med./max) & 66/3,536/96,064 & 32/3,355/180,047 \\
+Flip-flops (med./max) & 27/16,050 & 345/33,232 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \textbf{Metric and models.} The primary metric is intent accuracy: whether the
 selected operation is correct. We use the two contest-mandated models,
 GPT-4o-mini and Claude Haiku 4.5, at temperature 0.2, and repeat the
@@ -379,11 +405,27 @@ switching models (+8.0 points with the catalog alone).
 
 Moving GPT-4o-mini from the production to the high-recall bank removes 84\% of
 give-ups (44 to 7) but only 43\% of wrong-operation picks (110 to 63): good
-examples mainly help the model recognize unfamiliar phrasing. What remains is
-dominated by confusions between semantically similar operations, such as
-primary-input-to-output depth versus global maximum depth, or floating versus
-dangling nets, and part of it reflects genuine ambiguity in the requests. The
-supervised baselines confuse the same operation families. The concurrent
+examples mainly help the model recognize unfamiliar phrasing. What remains
+concentrates on a few pairs of semantically similar operations
+(Fig.~\ref{fig:confusion}). With the full catalog, the five most frequent pairs
+account for 31\% of GPT-4o-mini's misroutes and 53\% of Claude Haiku 4.5's, and
+the two models confuse different families. GPT-4o-mini mostly mistakes a
+scoped depth query (from primary inputs to primary outputs, or to flip-flops)
+for the global maximum depth, and floating for dangling nets. Claude Haiku 4.5
+mostly swaps transitive fanout and reachability, in both directions, which
+points to genuine ambiguity in the requests rather than to a consistent model
+error. The supervised baselines show several of the same confusions, such as
+dominators versus path existence.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/fig_confusion.pdf}
+\caption{Most frequent intent confusions with the full catalog and no
+retrieval (misroutes per run on the 1,420-request stress set; give-ups
+excluded). The five pairs shown account for 31\% (GPT-4o-mini) and 53\%
+(Claude Haiku 4.5) of each model's misroutes.}
+\label{fig:confusion}
+\end{figure} The concurrent
 agent of~\cite{companion}, built on a different architecture, reports the same
 kind of scope error on this benchmark (a pairwise depth of 10 reported as the
 whole-design depth of 53). On this request distribution, near-synonym
@@ -444,12 +486,30 @@ hard-requirement checks. The seven drift cases mark the conformance boundary
 of Section~\ref{sec:scope}: the guards enforced the corrupted operation's
 contract rather than the user's sentence, and the response claimed success.
 Detecting them requires request-level completion checks such as those
-of~\cite{companion}. Because the design persists, a single corrupted request
-also changes later answers: in 13 of the 24 runs, at least one later response
-differs from the uncorrupted run (27 of 173 later responses). This happens even
-when the guards act, since a refused or rolled-back request leaves the design
-in a state the user did not intend; the later answers are then correct for the
-actual design, whereas after drift the agent had reported success.
+of~\cite{companion}.
+
+\begin{figure}[t]
+\centering
+\input{figs/fig_case_tikz.tex}
+\caption{Measured persistent-state divergence in public testcase test29
+(selected requests; cells give the count each response reports, bold where it
+differs from the clean run). The routing of L4 is corrupted. Refusing it
+(basis outside the closed world) or rolling it back (engine fault) leaves the
+design unchanged; mis-routing it to an equivalent NOR+NOT remap commits an
+unwanted edit with a success message. Every later answer is correct for its
+run's actual design, yet differs from the clean run.}
+\label{fig:case}
+\end{figure}
+
+Because the design persists, a single corrupted request also changes later
+answers: in 13 of the 24 runs, at least one later response differs from the
+uncorrupted run (27 of 173 later responses), including 5 of the 7 drift runs,
+4 of 9 benign runs, 2 of 3 rolled-back runs, and 2 of 5 rejected runs.
+Fig.~\ref{fig:case} traces one testcase. Divergence also follows the safe
+outcomes, because a refused or rolled-back request leaves the design in a state
+the user did not intend; the later answers are then correct for the actual
+design, whereas after drift the agent had reported success. A changed answer
+is therefore not necessarily a wrong one.
 
 \subsection{Official Evaluation and Post-Contest Analysis}
 \label{sec:official}

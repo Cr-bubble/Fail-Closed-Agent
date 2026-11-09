@@ -1,0 +1,45 @@
+% Measured persistent-state divergence in public testcase test29
+% (values from paper_exp/e6_fault_injection/runs/test29__{clean,m2u,m3u,m2}.transcript.txt).
+% Bold cells differ from the clean run. Units: cm.
+\begin{tikzpicture}[
+  font=\scriptsize,
+  cell/.style={draw=black!55, line width=0.45pt, rounded corners=1.5pt,
+               align=center, minimum height=0.66cm, inner sep=1.5pt},
+  hdr/.style={align=center, inner sep=1pt},
+  lane/.style={align=left, anchor=west, inner sep=0pt},
+  carry/.style={-{Stealth[length=3pt]}, line width=0.5pt, black!55},
+]
+% ---- column headers (requests) ----
+\node[hdr] at (2.55,0)  {\textbf{L4 (corrupted)}\\rebuild with\\AND+NOT only};
+\node[hdr] at (4.3,0)   {L5: unused\\gates removed};
+\node[hdr] at (5.85,0)  {L6: inverter\\pairs collapsed};
+\node[hdr] at (7.4,0)   {L7: equivalent\\gates merged};
+
+% ---- lane labels ----
+\node[lane] at (0,-0.95) {Clean run};
+\node[lane] at (0,-1.8)  {Refused or\\rolled back};
+\node[lane] at (0,-2.65) {Drift};
+
+% ---- clean run ----
+\node[cell, fill=gray!8, minimum width=1.85cm] (c4) at (2.55,-0.95) {AND+NOT;\\2,067 rewritten};
+\node[cell, fill=gray!8, minimum width=1.0cm] (c5) at (4.3,-0.95) {0};
+\node[cell, fill=gray!8, minimum width=1.0cm] (c6) at (5.85,-0.95) {1,228};
+\node[cell, fill=gray!8, minimum width=1.0cm] (c7) at (7.4,-0.95) {31};
+% ---- refused (closed world) or rolled back (engine fault): design unchanged ----
+\node[cell, fill=blue!7, minimum width=1.85cm] (r4) at (2.55,-1.8) {\textbf{design}\\\textbf{unchanged}};
+\node[cell, fill=blue!7, minimum width=1.0cm] (r5) at (4.3,-1.8) {0};
+\node[cell, fill=blue!7, minimum width=1.0cm] (r6) at (5.85,-1.8) {\textbf{1}};
+\node[cell, fill=blue!7, minimum width=1.0cm] (r7) at (7.4,-1.8) {\textbf{4}};
+% ---- drift: equivalent NOR+NOT remap committed with a success message ----
+\node[cell, fill=red!9, minimum width=1.85cm] (d4) at (2.55,-2.65) {\textbf{NOR+NOT;}\\\textbf{success reported}};
+\node[cell, fill=red!9, minimum width=1.0cm] (d5) at (4.3,-2.65) {0};
+\node[cell, fill=red!9, minimum width=1.0cm] (d6) at (5.85,-2.65) {\textbf{1,998}};
+\node[cell, fill=red!9, minimum width=1.0cm] (d7) at (7.4,-2.65) {\textbf{1,125}};
+
+% ---- the netlist state carries forward along each run ----
+\foreach \r in {c,r,d} {
+  \draw[carry] (\r4) -- (\r5);
+  \draw[carry] (\r5) -- (\r6);
+  \draw[carry] (\r6) -- (\r7);
+}
+\end{tikzpicture}
