@@ -185,8 +185,9 @@ retraining.
 
 Routing proceeds in four stages (Fig.~\ref{fig:arch}a).
 (1)~\emph{Translation:} the LLM receives the catalog and the 50 most similar
-labeled requests, retrieved by BM25 from a bank of 940 requests drawn from the
-contest's public and beta rounds, and emits one JSON intent object.
+labeled requests, retrieved by BM25 from a bank of 940 labeled requests from
+contest-released testcases and our development sessions, and emits one JSON
+intent object.
 (2)~\emph{Schema validation:} an unknown intent, a missing parameter, or an
 illegal enumerated value is rejected, and the rejection reason is returned to
 the LLM for one corrective retry. (3)~\emph{Name grounding:} every parameter
@@ -325,8 +326,9 @@ our team wrote during the contest by paraphrasing the official request
 patterns: 71 operations with 20 paraphrases each, of which 1,065 use
 deliberately indirect or unusual wording and 355 use standard phrasing. The
 set provides ground-truth intents and parameters but no netlists, so we score
-the translation output directly. The retrieval bank of 940 requests from the
-contest's public and beta rounds is disjoint from the stress set. A second,
+the translation output directly. The retrieval bank of 940 labeled requests (703
+from contest-released testcases, 237 from author-constructed development
+sessions) is disjoint from the stress set. A second,
 high-recall bank of 2,130 author-written paraphrases contains paraphrases of
 the same operations as each test request; we use it with
 leave-one-testcase-out (LOCO) exclusion and only as an upper bound, because it
@@ -334,14 +336,14 @@ shares the stress set's distribution. Since the catalog's disambiguation
 entries were refined during the contest while inspecting errors on this set,
 accuracies on it may be optimistic.
 
-\textbf{Sessions.} Fault injection runs on the contest's public-release
-sessions and the official evaluation on its final round
-(Table~\ref{tab:testbed}). Final-round designs reach 180k gates and 33k
+\textbf{Sessions.} Fault injection runs on 40 development sessions (24 from
+the contest's public release, 16 constructed by the authors) and the official
+evaluation on the contest's final round (Table~\ref{tab:testbed}). Final-round designs reach 180k gates and 33k
 flip-flops, and a session chains up to 15 requests on one persistent netlist.
 
 \begin{table}[t]
-\caption{Contest sessions used for fault injection (public release) and the
-official evaluation (final round). Request categories follow the requirement
+\caption{Sessions used for fault injection (development: 24 contest-released,
+16 author-constructed) and the official evaluation (contest final round). Request categories follow the requirement
 classifier of our evaluation harness.}
 \label{tab:testbed}
 \centering
@@ -349,7 +351,7 @@ classifier of our evaluation harness.}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lrr@{}}
 \toprule
- & Public release & Final round \\
+ & Development & Final round \\
 \midrule
 Sessions / requests & 40 / 459 & 100 / 674 \\
 Analysis / edit / optimize & 390/57/12 & 590/38/46 \\
@@ -464,7 +466,7 @@ implemented basis or transformation, a basis outside the closed world, a
 target redirected to a different existing net, and a swap to a different
 intent. \emph{Engine faults} instead inject a function-changing rewire inside
 a transformation, standing in for an implementation bug. We run 24 injections
-(21 routing, 3 engine) over six transformation-heavy public testcases (the six
+(21 routing, 3 engine) over six transformation-heavy development sessions (the six
 uncorrupted runs pass all checks) and classify each final netlist against the
 hard requirements of the original request (Table~\ref{tab:fault}).
 
@@ -481,7 +483,7 @@ merged two drivers while the agent reported success. In one of these cases ABC
 returned an inconclusive result on the double-driven net, which an evaluation
 harness that treats inconclusive results as passing would have accepted.
 After we added a check that rejects renames onto existing names, no injection
-produced an unsafe commit, and the 40 public testcases pass all 84 of their
+produced an unsafe commit, and the 40 development sessions pass all 84 of their
 hard-requirement checks. The seven drift cases mark the conformance boundary
 of Section~\ref{sec:scope}: the guards enforced the corrupted operation's
 contract rather than the user's sentence, and the response claimed success.
@@ -491,7 +493,7 @@ of~\cite{companion}.
 \begin{figure}[t]
 \centering
 \input{figs/fig_case_tikz.tex}
-\caption{Measured persistent-state divergence in public testcase test29
+\caption{Measured persistent-state divergence in development session test29
 (selected requests; cells give the count each response reports, bold where it
 differs from the clean run). The routing of L4 is corrupted. Refusing it
 (basis outside the closed world) or rolling it back (engine fault) leaves the
