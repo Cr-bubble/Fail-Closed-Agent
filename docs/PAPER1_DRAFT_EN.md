@@ -15,10 +15,12 @@ agent architecture — the LLM authors an artifact, verification screens it
 afterwards — stakes correctness on verification coverage. We present a
 fail-closed architecture instead: the LLM is confined to translating one
 sentence into one intent from a schema-validated closed world of about 80
-operations that cannot express an unsafe act; a deterministic engine performs
-all circuit work, and every netlist mutation must pass functional equivalence
-(register-cut CEC), structural-bound, and gate-basis checks or be rolled back.
-Hallucination damage is thereby structurally capped at mis-routing. Using the
+predefined operations, so it cannot directly introduce arbitrary circuit
+modifications; a deterministic engine performs all circuit work, and every
+netlist mutation is validated for functional equivalence (register-cut CEC),
+structural bounds, and gate basis before commit, and rolled back on failure.
+Under explicitly stated assumptions on these deterministic layers, LLM errors
+are confined to routing mistakes. Using the
 ICCAD 2026 CAD Contest Problem A as a testbed — it formalizes exactly these two
 constraints — we run a controlled study on 1,420 real requests asking what
 actually limits routing accuracy for small frozen models: a full intent catalog
@@ -72,14 +74,15 @@ vehicle: its two rules instantiate exactly the two constraints above.
 Our answer inverts the architecture: **the LLM is a translator, not a
 reasoner**. Its sole job is to translate one sentence into one intent object
 living in a closed world — about 80 schema-validated intents whose required
-and optional parameters carry types and closed enumerations — **which cannot
-express an unsafe operation**. A deterministic engine performs all circuit
-work; every netlist mutation must pass three pre-commit gates — a register-cut
-combinational equivalence proof (sound sequential equivalence for this DFF
-model), structural-bound recomputation, and gate-basis purity — or roll back to
-the pre-edit snapshot. Hallucination damage is thus *structurally* capped: the
-worst case is a mis-routed request (one wrong answer), never a functionally
-corrupted netlist leaving the system (a zeroed testcase).
+and optional parameters carry types and closed enumerations — **so the LLM
+cannot directly introduce arbitrary circuit modifications**. A deterministic
+engine performs all circuit work; every netlist mutation is validated by three
+pre-commit gates — a register-cut combinational equivalence check (sound
+sequential equivalence for this DFF model), structural-bound recomputation, and
+gate-basis purity — and rolled back to the pre-edit snapshot on failure. Under
+explicit assumptions on these deterministic layers (§3.4), hallucination damage
+is thus *structurally* bounded: a routing error yields a wrong answer or a
+rejected edit rather than a functionally corrupted netlist.
 
 With correctness guaranteed by construction, a clean scientific question
 emerges: **what actually limits routing accuracy for small frozen models?** We
@@ -114,7 +117,7 @@ Contributions:
 
 - **C1 (architecture).** A fail-closed LLM netlist agent: closed-world intent
   contract, three pre-commit guards, snapshot rollback; hallucination damage
-  structurally capped at mis-routing. Zero hard-requirement violations on 231
+  bounded to routing errors under explicitly stated assumptions (§3.4). Zero hard-requirement violations on 231
   official testcases; 24/24 fault injections without an unsafe commit.
 - **C2 (measurement study).** A 1,420-request, leave-one-testcase-out
   controlled study with a full ablation ladder (gpt-4o-mini, N=5):
@@ -137,8 +140,8 @@ against compiler feedback; VerilogEval and RTLLM benchmark RTL generation,
 NetlistBench and MCPBench benchmark netlist manipulation and MCP tool calling.
 In all of these, the LLM's output — script, code, repair — is part of the
 product, screened after the fact; what screening misses ships. Our
-architecture is the inverse: LLM output is confined to a closed world that
-cannot express an unsafe operation.
+architecture is the inverse: LLM output is confined to a closed world of
+predefined operations, and every mutation is validated before commit.
 
 **Tool calling and retrieval.** Gorilla, ToolLLM, and the Berkeley Function
 Calling Leaderboard study NL-to-API translation, typically retrieving *tool
@@ -223,14 +226,16 @@ the fail-closed default.
 
 ### 3.3 Guards and commit discipline
 
-Every netlist mutation must pass three pre-commit checks or roll back to the
-pre-edit snapshot (Fig. 1b):
+Every netlist mutation is validated by three pre-commit checks and rolled
+back to the pre-edit snapshot on failure (Fig. 1b):
 
 1. **Functional equivalence.** A register-cut projects the sequential circuit
    to a combinational one — every DFF's D, CK, RN, SN become pseudo-POs and Q a
    pseudo-PI — and ABC `cec` decides it. Because *all* DFF inputs are exported
    as observation points, combinational equivalence is sound sequential
-   equivalence, including logic on clock and asynchronous pins.
+   equivalence, including logic on clock and asynchronous pins. If ABC
+   cannot reach a verdict, a yosys equivalence check serves as fallback
+   (see A2 in §3.4).
 2. **Structural bounds.** If the request states a bound (e.g., fanout <= k), it
    is independently recomputed.
 3. **Basis purity.** If the request restricts gate types (e.g., NAND/NOT only),
@@ -240,18 +245,30 @@ Mutations are also entered into a delta ledger (buffers inserted, gates
 removed), giving later "how many X were added?" requests a deterministic data
 source.
 
-### 3.4 The damage-cap argument
+### 3.4 Scope of the safety guarantee
 
-Under this architecture, any LLM output — including an outright hallucination —
-has only two possible consequences: (a) mis-routing to a wrong analysis intent
-(one wrong answer), or (b) mis-routing to a wrong mutation intent, which either
-passes all three gates (safe, though possibly not what the user wanted) or is
-rolled back (design unchanged). **There is no path by which a functionally
-corrupted netlist leaves the system.** The boundary of this claim, and its
-empirical test, appear in §4.6: fault injection found exactly one exception — a
-rename onto an existing name, an operation that had bypassed the guards — and
-after a one-line fix, 24/24 injections cause no unsafe commit, making the claim
-exact.
+The architecture restricts LLM-generated actions to a predefined operation
+space and validates netlist mutations before commit, so the LLM cannot directly
+introduce arbitrary circuit modifications. The resulting safety property is
+conditional, and we state its conditions explicitly:
+
+- **(A1) Complete mediation.** Every operation that mutates the netlist
+  executes through the commit path of §3.3.
+- **(A2) Sound acceptance.** The equivalence gate accepts a mutation only when
+  equivalence is established. In the current implementation, when neither ABC
+  nor the yosys fallback reaches a verdict within the time budget, acceptance
+  falls back to the by-construction correctness of the transform templates.
+- **(A3) Faithful sequential model.** The register-cut projection matches the
+  flip-flop semantics of the testbed.
+
+Under these conditions, an LLM error — including an outright hallucination —
+degrades to one of three outcomes: a wrong analysis answer, a rolled-back edit,
+or an equivalent edit that may not fulfill the request (the drift class of
+§4.6). The guarantee concerns functional safety, not task completion, and it
+is only as strong as the deterministic layers that implement it. A1 is the
+assumption most exposed to implementation error, so we test it directly:
+fault injection (§4.6) found one operation, renaming, that bypassed the commit
+path; after the fix, none of the 24 injections produced an unsafe commit.
 
 ## 4. Measurement Study: What Limits Routing Accuracy?
 
@@ -440,7 +457,8 @@ passing):
   a success message. In one case ABC returns NA on the double-driven net and
   even the evaluator's equivalence gate passes it (an evaluator blind spot).
   After a one-line collision check (reject renames onto existing names):
-  **24/24 injections, zero unsafe commits** — §3.4's claim becomes exact — and
+  **24/24 injections, zero unsafe commits** — A1 holds for every operation
+  exercised — and
   the fix passes the full 40-case regression (HARD 84/84; pre-existing
   GOLDEN/DERIVED diffs reproduce identically on the unfixed mainline).
 
@@ -531,14 +549,16 @@ sentence-level intent conformance needs another layer — the concurrent
 task-completion checks provide one implementation [Companion]. (7) Cloud
 mini-class models serve as *capability proxies* for the locally-deployable
 small-model regime; direct validation on open-weight 7–14B models is future
-work.
+work. (8) Assumption A2 (§3.4) is met except when no equivalence checker reaches
+a verdict within budget, in which case acceptance relies on by-construction
+correctness; the frequency of such undecided checks has not yet been measured.
 
 ## 7. Conclusion
 
 In an all-or-nothing environment, an LLM agent's correctness should not rest
 on the coverage of post-hoc verification; it should be guaranteed by
-architecture — confine the LLM to a closed world that cannot express an
-unsafe operation, and gate every mutation behind an equivalence proof. The
+architecture — confine the LLM to a closed world of predefined operations,
+and validate every mutation before commit under explicitly stated assumptions. The
 architecture not only held the zero-violation line; it turned "the routing
 limit of small models" into a cleanly measurable question. The answer: the
 bottleneck is near-synonym intent discrimination — neither retrieval nor
