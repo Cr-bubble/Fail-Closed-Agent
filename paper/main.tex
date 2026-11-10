@@ -24,22 +24,15 @@
 \maketitle
 
 \begin{abstract}
-Natural-language interfaces to EDA tools must interpret free-form requests
-without compromising circuit correctness, often with models that cannot be
-adapted. We present a fail-closed agent for natural-language netlist
-manipulation that confines the LLM to translating each request into one intent
-from a closed catalog of predefined operations. A deterministic engine executes
-all circuit operations, and a mutation is committed only after a proof of
-functional equivalence and checks of the operation's structural constraints;
-otherwise it is rolled back. We state the assumptions under which committed
-netlists remain equivalent and separate this functional guarantee from request
-conformance, which it does not provide. On a 1,420-request paraphrase stress
-set for the ICCAD 2026 CAD Contest Problem A, the full intent catalog reaches
-88.4\% routing accuracy with GPT-4o-mini, against 61.4\% for a bare intent
-list and at most 73.3\% for supervised classifiers; Claude Haiku 4.5 reaches
-97.4\%. Fault injection exposed one guard-bypassing operation; after its
-repair, none of 24 injected faults produced an unsafe commit, while 7 produced
-equivalent but non-conforming edits.
+LLM agents that edit gate-level netlists must interpret free-form requests
+without corrupting the design, often with small, frozen models. We present a
+fail-closed agent in which the LLM only maps each request to one intent from a
+closed catalog of operations; a deterministic engine executes it, and a
+mutation commits only after equivalence and structural checks pass. On a
+1,420-request paraphrase stress set for the ICCAD 2026 CAD Contest, the catalog
+raises GPT-4o-mini routing accuracy from 61.4\% to 88.4\%, beyond supervised
+classifiers (73.3\%). Fault injection found no unsafe commit after one repair,
+yet exposed equivalent but non-conforming edits.
 \end{abstract}
 
 % ---------------------------------------------------------------------------
